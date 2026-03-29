@@ -17,7 +17,7 @@
         
         /* Header */
         .header { background: #075e54; color: white; padding: 15px; font-weight: bold; text-align: center; z-index: 10; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
-        .call-btn { background: #128c7e; border: none; color: white; padding: 5px 10px; border-radius: 5px; float: right; cursor: pointer; font-size: 14px; }
+        .call-btn { background: #128c7e; border: none; color: white; padding: 8px 15px; border-radius: 20px; float: right; cursor: pointer; font-size: 14px; font-weight: bold; }
         
         /* Zarada */
         .ad-space { background: #fff; text-align: center; font-size: 11px; color: #888; border-bottom: 1px solid #ccc; padding: 5px; min-height: 50px; }
@@ -26,6 +26,7 @@
         #messages { flex: 1; overflow-y: auto; list-style-type: none; padding: 15px; margin: 0; display: flex; flex-direction: column; }
         #messages li { padding: 8px 12px; margin-bottom: 8px; border-radius: 10px; max-width: 80%; word-wrap: break-word; background: white; box-shadow: 0 1px 1px rgba(0,0,0,0.1); align-self: flex-start; position: relative; }
         .user-name { font-size: 10px; font-weight: bold; color: #075e54; display: block; margin-bottom: 3px; }
+        .my-msg { align-self: flex-end ! guerrilla; background: #dcf8c6 !important; }
         
         /* Unos */
         form { display: flex; padding: 10px; background: #f0f0f0; border-top: 1px solid #ddd; }
@@ -38,7 +39,7 @@
         #local-video { width: 30%; height: 30%; position: absolute; bottom: 80px; right: 20px; border: 2px solid #fff; border-radius: 8px; transform: scaleX(-1); }
         .end-call { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); background: #ff3b30; color: white; border: none; border-radius: 50%; width: 65px; height: 65px; font-size: 30px; }
         
-        #peer-info { font-size: 9px; color: #dcf8c6; display: block; margin-top: 2px; cursor: pointer; }
+        #peer-info { font-size: 10px; color: #dcf8c6; display: block; margin-top: 4px; }
     </style>
 </head>
 <body>
@@ -51,8 +52,8 @@
 
     <div class="header">
         Green Apple Chat
-        <button class="call-btn" onclick="startCall()">📞 Poziv</button>
-        <span id="peer-info" onclick="copyMyID()">Klikni da kopiraš svoj ID</span>
+        <button class="call-btn" onclick="startCall()">📞 Pozovi</button>
+        <span id="peer-info">Povezivanje...</span>
     </div>
 
     <div class="ad-space">
@@ -71,42 +72,45 @@
     
     <script>
         var socket = io();
-        var myName = prompt("Dobrodošli u Green Apple! Unesite vaše ime:") || "Gost";
-        var myID = "";
+        var notificationSound = new Audio('https://assets.mixkit.co/active_storage/sfx/2354/2354-preview.mp3');
+        
+        // Postavljamo tvoj fiksni broj kao primarni ID ako si ti admin, inače pita korisnika
+        var myPhone = (window.location.hostname === "localhost") ? "00387603344334" : prompt("Unesite vaš broj telefona za registraciju:");
+        var myName = prompt("Unesite vaše ime:") || "Korisnik";
 
-        // --- CHAT ---
+        // --- CHAT LOGIKA ---
         document.getElementById('form').addEventListener('submit', function(e) {
             e.preventDefault();
             var input = document.getElementById('input');
             if (input.value) {
-                // Šaljemo ime i poruku zajedno
-                socket.emit('chat message', { name: myName, text: input.value });
+                socket.emit('chat message', { name: myName, text: input.value, phone: myPhone });
                 input.value = '';
             }
         });
 
         socket.on('chat message', function(data) {
             var item = document.createElement('li');
+            if(data.phone === myPhone) item.classList.add('my-msg');
             item.innerHTML = `<span class="user-name">${data.name}</span>${data.text}`;
             document.getElementById('messages').appendChild(item);
             document.getElementById('messages').scrollTop = document.getElementById('messages').scrollHeight;
+            
+            // Zvuk obavijesti (Ding!) ako poruka nije od tebe
+            if (data.phone !== myPhone) {
+                notificationSound.play().catch(e => console.log("Sound error:", e));
+            }
         });
 
-        // --- VIDEO (PEERJS) ---
-        var peer = new Peer(); 
+        // --- VIDEO POZIVI (PEERJS) ---
+        // Koristimo broj telefona kao Peer ID
+        var peer = new Peer(myPhone); 
 
         peer.on('open', id => {
-            myID = id;
-            document.getElementById('peer-info').innerText = "Tvoj ID (Klikni za kopiranje): " + id;
+            document.getElementById('peer-info').innerText = "Vaš registrovani broj: " + id;
         });
 
-        function copyMyID() {
-            navigator.clipboard.writeText(myID);
-            alert("ID kopiran! Pošalji ga prijatelju u chatu.");
-        }
-
         peer.on('call', function(call) {
-            if(confirm("Neko vas zove! Prihvatiti video poziv?")) {
+            if(confirm("Dolazni video poziv! Želite li se javiti?")) {
                 navigator.mediaDevices.getUserMedia({video: true, audio: true}).then(stream => {
                     document.getElementById('video-grid').style.display = 'block';
                     document.getElementById('local-video').srcObject = stream;
@@ -119,12 +123,12 @@
         });
 
         function startCall() {
-            var friendID = prompt("Zalijepi ID prijatelja ovdje:");
-            if(friendID) {
+            var friendPhone = prompt("Unesite broj telefona osobe koju želite nazvati:");
+            if(friendPhone) {
                 navigator.mediaDevices.getUserMedia({video: true, audio: true}).then(stream => {
                     document.getElementById('video-grid').style.display = 'block';
                     document.getElementById('local-video').srcObject = stream;
-                    var call = peer.call(friendID, stream);
+                    var call = peer.call(friendPhone, stream);
                     call.on('stream', remoteStream => {
                         document.getElementById('remote-video').srcObject = remoteStream;
                     });
@@ -132,7 +136,14 @@
             }
         }
 
-        function endCall() { location.reload(); }
+        function endCall() {
+            location.reload(); 
+        }
+
+        // Osiguravamo da zvuk radi na mobilnim uređajima nakon prvog klika
+        document.body.addEventListener('click', function() {
+            notificationSound.load();
+        }, {once: true});
     </script>
 </body>
 </html>

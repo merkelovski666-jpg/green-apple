@@ -1,14 +1,6 @@
 <!DOCTYPE html>
-<html>
+<html lang="bs">
 <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Green Apple Chat</title> <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Green Apple">
-
-<link rel="apple-touch-icon" sizes="180x180" href="https://img.icons8.com/color/180/000000/apple.png">
-
-    <style><head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Green Apple Chat</title>
@@ -16,37 +8,72 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Green Apple">
-    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/888/888841.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="https://img.icons8.com/color/180/000000/apple.png">
     <link rel="manifest" href="/manifest.json">
-    <style>
-        body { font-family: sans-serif; background: #e5ddd5; margin: 0; ...
 
-        body { font-family: sans-serif; background: #e5ddd5; margin: 0; display: flex; flex-direction: column; height: 100vh; }
-        .header { background: #075e54; color: white; padding: 15px; font-weight: bold; text-align: center; }
-        /* PROSTOR ZA REKLAMU */
-        .ad-space { background: #fff; text-align: center; font-size: 10px; color: #888; border-bottom: 1px solid #ccc; padding: 5px; }
-        #messages { flex: 1; overflow-y: auto; list-style-type: none; padding: 10px; margin: 0; }
-        #messages li { padding: 10px; margin-bottom: 8px; border-radius: 10px; max-width: 75%; word-wrap: break-word; position: relative; }
-        .msg { background: white; align-self: flex-start; box-shadow: 0 1px 1px rgba(0,0,0,0.1); }
-        form { display: flex; padding: 10px; background: #f0f0f0; }
-        input { flex: 1; border: none; padding: 12px; border-radius: 25px; outline: none; }
-        button { background: #075e54; color: white; border: none; border-radius: 50%; width: 45px; margin-left: 5px; }
+    <style>
+        body { font-family: sans-serif; background: #e5ddd5; margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+        
+        /* Header sa video ikonom */
+        .header { background: #075e54; color: white; padding: 15px; font-weight: bold; text-align: center; position: relative; z-index: 10; }
+        .call-btn { background: none; border: none; color: white; font-size: 22px; float: right; cursor: pointer; }
+        
+        /* Prostor za reklame (ZARADA) */
+        .ad-space { background: #fff; text-align: center; font-size: 11px; color: #888; border-bottom: 1px solid #ccc; padding: 5px; min-height: 50px; }
+        
+        /* Poruke */
+        #messages { flex: 1; overflow-y: auto; list-style-type: none; padding: 15px; margin: 0; display: flex; flex-direction: column; }
+        #messages li { padding: 8px 12px; margin-bottom: 8px; border-radius: 10px; max-width: 80%; word-wrap: break-word; background: white; box-shadow: 0 1px 1px rgba(0,0,0,0.1); align-self: flex-start; }
+        
+        /* Donji dio za unos */
+        form { display: flex; padding: 10px; background: #f0f0f0; border-top: 1px solid #ddd; }
+        input { flex: 1; border: none; padding: 12px; border-radius: 25px; outline: none; font-size: 16px; }
+        button#send { background: #075e54; color: white; border: none; border-radius: 50%; width: 45px; height: 45px; margin-left: 10px; cursor: pointer; font-weight: bold; }
+
+        /* Video prozor (preko cijelog ekrana) */
+        #video-grid { display: none; background: #000; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1000; }
+        #remote-video { width: 100%; height: 100%; object-fit: cover; }
+        #local-video { width: 30%; height: 30%; position: absolute; bottom: 80px; right: 20px; border: 2px solid #fff; border-radius: 8px; transform: scaleX(-1); }
+        .end-call { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); background: #ff3b30; color: white; border: none; border-radius: 50%; width: 65px; height: 65px; font-size: 30px; cursor: pointer; }
+        
+        #peer-id-display { font-size: 10px; color: #dcf8c6; display: block; margin-top: 4px; }
     </style>
 </head>
 <body>
-    <div class="header">Green Apple Chat</div>
-    <div class="ad-space">REKLAMA (Ovdje zarađuješ novac)</div>
+
+    <div id="video-grid">
+        <video id="remote-video" autoplay playsinline></video>
+        <video id="local-video" autoplay muted playsinline></video>
+        <button class="end-call" onclick="endCall()">×</button>
+    </div>
+
+    <div class="header">
+        Green Apple Chat
+        <button class="call-btn" onclick="startCall()">📞</button>
+        <span id="peer-id-display">Učitavam tvoj ID...</span>
+    </div>
+
+    <div class="ad-space">
+        <p>REKLAMA (Ovdje zarađuješ novac)</p>
+    </div>
     
     <ul id="messages"></ul>
-    <form id="form"><input id="input" autocomplete="off" placeholder="Napiši poruku..." /><button>></button></form>
+
+    <form id="form">
+        <input id="input" autocomplete="off" placeholder="Napiši poruku..." />
+        <button id="send">></button>
+    </form>
 
     <script src="/socket.io/socket.io.js"></script>
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    
     <script>
         var socket = io();
         var form = document.getElementById('form');
         var input = document.getElementById('input');
         var messages = document.getElementById('messages');
-
+        
+        // --- CHAT LOGIKA ---
         form.addEventListener('submit', function(e) {
             e.preventDefault();
             if (input.value) {
@@ -58,46 +85,51 @@
         socket.on('chat message', function(msg) {
             var item = document.createElement('li');
             item.textContent = msg;
-            item.className = 'msg';
             messages.appendChild(item);
             messages.scrollTop = messages.scrollHeight;
         });
+
+        // --- VIDEO POZIVI (PEERJS) ---
+        var peer = new Peer(); 
+        var localVideo = document.getElementById('local-video');
+        var remoteVideo = document.getElementById('remote-video');
+        var videoGrid = document.getElementById('video-grid');
+
+        peer.on('open', id => {
+            document.getElementById('peer-id-display').innerText = "Tvoj Pozivni ID: " + id;
+        });
+
+        // Javljanje na poziv
+        peer.on('call', function(call) {
+            navigator.mediaDevices.getUserMedia({video: true, audio: true}).then(stream => {
+                videoGrid.style.display = 'block';
+                localVideo.srcObject = stream;
+                call.answer(stream);
+                call.on('stream', remoteStream => {
+                    remoteVideo.srcObject = remoteStream;
+                });
+            });
+        });
+
+        // Pozivanje nekoga
+        function startCall() {
+            var peerId = prompt("Unesi ID prijatelja:");
+            if(peerId) {
+                navigator.mediaDevices.getUserMedia({video: true, audio: true}).then(stream => {
+                    videoGrid.style.display = 'block';
+                    localVideo.srcObject = stream;
+                    var call = peer.call(peerId, stream);
+                    call.on('stream', remoteStream => {
+                        remoteVideo.srcObject = remoteStream;
+                    });
+                });
+            }
+        }
+
+        function endCall() {
+            location.reload(); 
+        }
     </script>
-<script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
-</body> var peer = new Peer(); 
-var myStream;
-
-// Kada dobiješ poziv
-peer.on('call', function(call) {
-    navigator.mediaDevices.getUserMedia({video: true, audio: true}).then(stream => {
-        document.getElementById('video-grid').style.display = 'block';
-        document.getElementById('local-video').srcObject = stream;
-        call.answer(stream);
-        call.on('stream', remoteStream => {
-            document.getElementById('remote-video').srcObject = remoteStream;
-        });
-    });
-});
-
-function startCall() {
-    var peerId = prompt("Unesite ID prijatelja kojeg zovete:");
-    navigator.mediaDevices.getUserMedia({video: true, audio: true}).then(stream => {
-        document.getElementById('video-grid').style.display = 'block';
-        document.getElementById('local-video').srcObject = stream;
-        var call = peer.call(peerId, stream);
-        call.on('stream', remoteStream => {
-            document.getElementById('remote-video').srcObject = remoteStream;
-        });
-    });
-}
-
-function endCall() {
-    location.reload(); // Najbrži način da prekineš kameru i poziv
-}
-
-peer.on('open', id => {
-    console.log('Vaš pozivni ID je: ' + id);
-    // Možeš dodati da se ovaj ID ispiše negdje na ekranu da ga prijatelj vidi
-});
-
+</body>
 </html>
+

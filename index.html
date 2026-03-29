@@ -63,5 +63,41 @@
             messages.scrollTop = messages.scrollHeight;
         });
     </script>
-</body>
+<script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+</body> var peer = new Peer(); 
+var myStream;
+
+// Kada dobiješ poziv
+peer.on('call', function(call) {
+    navigator.mediaDevices.getUserMedia({video: true, audio: true}).then(stream => {
+        document.getElementById('video-grid').style.display = 'block';
+        document.getElementById('local-video').srcObject = stream;
+        call.answer(stream);
+        call.on('stream', remoteStream => {
+            document.getElementById('remote-video').srcObject = remoteStream;
+        });
+    });
+});
+
+function startCall() {
+    var peerId = prompt("Unesite ID prijatelja kojeg zovete:");
+    navigator.mediaDevices.getUserMedia({video: true, audio: true}).then(stream => {
+        document.getElementById('video-grid').style.display = 'block';
+        document.getElementById('local-video').srcObject = stream;
+        var call = peer.call(peerId, stream);
+        call.on('stream', remoteStream => {
+            document.getElementById('remote-video').srcObject = remoteStream;
+        });
+    });
+}
+
+function endCall() {
+    location.reload(); // Najbrži način da prekineš kameru i poziv
+}
+
+peer.on('open', id => {
+    console.log('Vaš pozivni ID je: ' + id);
+    // Možeš dodati da se ovaj ID ispiše negdje na ekranu da ga prijatelj vidi
+});
+
 </html>

@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Green Apple Chat</title>
+    <style>
+        body { font-family: sans-serif; background: #e5ddd5; margin: 0; display: flex; flex-direction: column; height: 100vh; }
+        .header { background: #075e54; color: white; padding: 15px; font-weight: bold; text-align: center; }
+        /* PROSTOR ZA REKLAMU */
+        .ad-space { background: #fff; text-align: center; font-size: 10px; color: #888; border-bottom: 1px solid #ccc; padding: 5px; }
+        #messages { flex: 1; overflow-y: auto; list-style-type: none; padding: 10px; margin: 0; }
+        #messages li { padding: 10px; margin-bottom: 8px; border-radius: 10px; max-width: 75%; word-wrap: break-word; position: relative; }
+        .msg { background: white; align-self: flex-start; box-shadow: 0 1px 1px rgba(0,0,0,0.1); }
+        form { display: flex; padding: 10px; background: #f0f0f0; }
+        input { flex: 1; border: none; padding: 12px; border-radius: 25px; outline: none; }
+        button { background: #075e54; color: white; border: none; border-radius: 50%; width: 45px; margin-left: 5px; }
+    </style>
+</head>
+<body>
+    <div class="header">Green Apple Chat</div>
+    <div class="ad-space">REKLAMA (Ovdje zarađuješ novac)</div>
+    
+    <ul id="messages"></ul>
+    <form id="form"><input id="input" autocomplete="off" placeholder="Napiši poruku..." /><button>></button></form>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        var socket = io();
+        var form = document.getElementById('form');
+        var input = document.getElementById('input');
+        var messages = document.getElementById('messages');
+
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            if (input.value) {
+                socket.emit('chat message', input.value);
+                input.value = '';
+            }
+        });
+
+        socket.on('chat message', function(msg) {
+            var item = document.createElement('li');
+            item.textContent = msg;
+            item.className = 'msg';
+            messages.appendChild(item);
+            messages.scrollTop = messages.scrollHeight;
+        });
+    </script>
+</body>
+</html>

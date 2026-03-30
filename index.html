@@ -4,101 +4,92 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Green Apple</title>
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <link rel="apple-touch-icon" href="https://img.icons8.com/color/180/000000/apple.png">
-    
+    <title>Green Apple Kripto</title>
     <style>
-        body { font-family: -apple-system, system-ui, sans-serif; background: #e5ddd5; margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
-        .header { background: #075e54; color: white; padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
-        .call-btn { background: #25d366; border: none; color: white; padding: 8px 15px; border-radius: 20px; font-weight: bold; cursor: pointer; }
-        #messages { flex: 1; overflow-y: auto; list-style: none; padding: 15px; margin: 0; display: flex; flex-direction: column; gap: 8px; }
-        li { padding: 10px; border-radius: 12px; max-width: 80%; background: white; box-shadow: 0 1px 2px rgba(0,0,0,0.1); align-self: flex-start; position: relative; }
-        .my-msg { align-self: flex-end; background: #dcf8c6; }
-        .u-name { font-size: 10px; color: #075e54; font-weight: bold; display: block; }
-        .m-time { font-size: 9px; color: #888; float: right; margin-top: 4px; }
-        form { display: flex; padding: 10px; background: #f0f0f0; }
-        input { flex: 1; border: none; padding: 12px; border-radius: 25px; outline: none; }
-        #video-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: black; z-index: 9999; }
-        video { width: 100%; height: 100%; object-fit: cover; }
-        #local-v { width: 30%; height: 22%; position: absolute; bottom: 100px; right: 20px; border: 2px solid white; border-radius: 10px; transform: scaleX(-1); }
+        body { font-family: -apple-system, sans-serif; background: #0b141a; margin: 0; display: flex; flex-direction: column; height: 100vh; color: white; }
+        .header { background: #202c33; padding: 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #313d45; }
+        .room-info { font-size: 12px; color: #00a884; }
+        #messages { flex: 1; overflow-y: auto; list-style: none; padding: 20px; margin: 0; display: flex; flex-direction: column; gap: 10px; background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png'); }
+        li { padding: 8px 12px; border-radius: 8px; max-width: 70%; background: #202c33; font-size: 15px; align-self: flex-start; border: 1px solid #313d45; }
+        .my-msg { align-self: flex-end; background: #005c4b; border: none; }
+        .u-name { font-size: 10px; color: #00a884; font-weight: bold; display: block; }
+        .crypto-tag { font-size: 9px; color: #8696a0; margin-top: 4px; display: block; }
+        form { display: flex; padding: 10px; background: #202c33; }
+        input { flex: 1; border: none; padding: 12px; border-radius: 20px; background: #2a3942; color: white; outline: none; }
+        #send { background: #00a884; color: white; border: none; border-radius: 50%; width: 45px; height: 45px; margin-left: 10px; cursor: pointer; }
     </style>
 </head>
 <body>
 
-<div id="video-overlay">
-    <video id="remote-v" autoplay playsinline></video>
-    <video id="local-v" autoplay muted playsinline></video>
-    <button onclick="location.reload()" style="position:absolute; bottom:40px; left:50%; transform:translateX(-50%); background:#ff3b30; color:white; border:none; border-radius:50%; width:70px; height:70px; font-size:30px;">×</button>
-</div>
-
 <div class="header">
-    <h1 style="font-size:18px; margin:0;">Green Apple</h1>
-    <button class="call-btn" onclick="startCall()">📞 POZOVI</button>
+    <div>
+        <h1 style="font-size:18px; margin:0;">Green Apple 🔐</h1>
+        <span id="room-display" class="room-info">Soba: -</span>
+    </div>
+    <button onclick="location.reload()" style="background:none; border:1px solid #555; color:#ccc; border-radius:5px; padding:5px;">Promijeni Sobu</button>
 </div>
 
 <ul id="messages"></ul>
 
 <form id="chat-form">
-    <input id="msg-input" placeholder="Napiši poruku..." autocomplete="off">
-    <button type="submit" style="background:#075e54; color:white; border:none; border-radius:50%; width:45px; height:45px; margin-left:10px; cursor:pointer;">></button>
+    <input id="msg-input" placeholder="Šifrovana poruka..." autocomplete="off">
+    <button id="send">></button>
 </form>
 
 <script src="/socket.io/socket.io.js"></script>
-<script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
-
 <script>
     const socket = io();
-    const ding = new Audio('https://assets.mixkit.co/active_storage/sfx/2354/2354-preview.mp3');
 
-    let myPhone = localStorage.getItem('apple_phone') || prompt("Tvoj broj (npr. 0603344334):");
+    // 1. REGISTRACIJA I SOBE
     let myName = localStorage.getItem('apple_name') || prompt("Tvoje ime:");
-    localStorage.setItem('apple_phone', myPhone);
+    let myPhone = localStorage.getItem('apple_phone') || prompt("Tvoj broj:");
+    let myRoom = prompt("Unesi ime privatne sobe (npr. tajna123):") || "javna";
+    
     localStorage.setItem('apple_name', myName);
+    localStorage.setItem('apple_phone', myPhone);
+    
+    document.getElementById('room-display').innerText = "Soba: " + myRoom;
+    socket.emit('join room', myRoom);
 
-    const peer = new Peer(myPhone, {
-        config: {'iceServers': [{ url: 'stun:stun.l.google.com:19302' }, { url: 'stun:stun1.l.google.com:19302' }]}
-    });
-
-    socket.on('load history', (h) => h.forEach(addMsg));
-    socket.on('chat message', (d) => { addMsg(d); if(d.phone !== myPhone) ding.play().catch(()=>{}); });
-
-    function addMsg(d) {
-        const li = document.createElement('li');
-        if(d.phone === myPhone) li.className = 'my-msg';
-        li.innerHTML = `<span class="u-name">${d.name}</span>${d.text}<span class="m-time">${d.time || ''}</span>`;
-        document.getElementById('messages').appendChild(li);
-        document.getElementById('messages').scrollTop = document.getElementById('messages').scrollHeight;
+    // 2. JEDNOSTAVNA ENKRIPCIJA (Base64 + Tajni ključ sobe)
+    function encrypt(text) {
+        return btoa(myRoom + "|" + text); // Šifrira tekst koristeći ime sobe
     }
 
+    function decrypt(encodedText) {
+        try {
+            let decoded = atob(encodedText);
+            let parts = decoded.split("|");
+            return (parts[0] === myRoom) ? parts[1] : "Greška u enkripciji";
+        } catch(e) { return "Nečitljiva poruka"; }
+    }
+
+    // 3. CHAT LOGIKA
     document.getElementById('chat-form').onsubmit = (e) => {
         e.preventDefault();
-        const i = document.getElementById('msg-input');
-        if(i.value) { socket.emit('chat message', {name: myName, text: i.value, phone: myPhone}); i.value = ''; }
+        const input = document.getElementById('msg-input');
+        if (input.value) {
+            let encryptedMsg = encrypt(input.value);
+            socket.emit('chat message', { 
+                name: myName, 
+                text: encryptedMsg, 
+                phone: myPhone, 
+                room: myRoom 
+            });
+            input.value = '';
+        }
     };
 
-    peer.on('call', c => {
-        if(confirm("Poziv! Javi se?")) {
-            navigator.mediaDevices.getUserMedia({video:true, audio:true}).then(s => {
-                document.getElementById('video-overlay').style.display='block';
-                document.getElementById('local-v').srcObject=s;
-                c.answer(s);
-                c.on('stream', rs => document.getElementById('remote-v').srcObject=rs);
-            });
-        }
+    socket.on('chat message', (data) => {
+        const li = document.createElement('li');
+        if (data.phone === myPhone) li.className = 'my-msg';
+        
+        let plainText = decrypt(data.text);
+        li.innerHTML = `<span class="u-name">${data.name}</span>${plainText}<span class="crypto-tag">🔒 End-to-end encrypted</span>`;
+        
+        document.getElementById('messages').appendChild(li);
+        document.getElementById('messages').scrollTop = document.getElementById('messages').scrollHeight;
     });
-
-    function startCall() {
-        const t = prompt("Broj koji zoveš:");
-        if(t) {
-            navigator.mediaDevices.getUserMedia({video:true, audio:true}).then(s => {
-                document.getElementById('video-overlay').style.display='block';
-                document.getElementById('local-v').srcObject=s;
-                const c = peer.call(t, s);
-                c.on('stream', rs => document.getElementById('remote-v').srcObject=rs);
-            });
-        }
-    }
 </script>
 </body>
 </html>

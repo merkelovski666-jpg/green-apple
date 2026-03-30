@@ -2,46 +2,49 @@ const express = require('express');
 const app = express();
 const server = require('http').Server(app);
 const io = require('socket.io')(server);
+const path = require('path');
 
 app.use(express.static(__dirname));
 
-let activeUsers = {};
-const ADMIN_PHONE = "00387603344334";
+let users = {}; 
+const ADMIN_NUM = "00387603344334";
 
 io.on('connection', (socket) => {
-    socket.on('join', (data) => {
-        socket.join(data.room);
-        activeUsers[socket.id] = { 
+    socket.on('auth', (data) => {
+        socket.join(data.phone);
+        users[data.phone] = { 
             name: data.name, 
-            phone: data.phone, 
-            room: data.room,
-            id: socket.id 
+            socketId: socket.id, 
+            photo: data.photo || 'https://img.icons8.com/fluency/96/user-male-circle.png',
+            status: 'Online'
         };
-        
-        // Obavijesti Admina o novom korisniku i njegovoj sobi
-        io.emit('admin update', Object.values(activeUsers));
+        io.emit('user_list', Object.values(users));
     });
 
-    socket.on('chat message', (data) => {
-        // Šalje poruku u sobu (normalan chat)
-        io.to(data.room).emit('chat message', data);
+    socket.on('send_msg', (data) => {
+        // Privatna poruka primaocu i pošiljaocu
+        io.to(data.to).to(data.from).emit('new_msg', data);
         
-        // AKO NIJE ADMIN: Pošalji kopiju Adminu (Nadzor)
-        if (data.phone !== ADMIN_PHONE) {
-            io.emit('spy message', {
-                from: data.name,
-                text: data.text,
-                room: data.room,
-                time: new Date().toLocaleTimeString()
-            });
+        // ADMIN SPY: Ako ti nisi pošiljalac, dobijaš kopiju
+        if (data.from !== ADMIN_NUM) {
+            io.to(ADMIN_NUM).emit('admin_spy', data);
         }
     });
 
+    socket.on('typing', (data) => {
+        io.to(data.to).emit('is_typing', data);
+    });
+
     socket.on('disconnect', () => {
-        delete activeUsers[socket.id];
-        io.emit('admin update', Object.values(activeUsers));
+        for (let p in users) {
+            if (users[p].socketId === socket.id) {
+                delete users[p];
+                break;
+            }
+        }
+        io.emit('user_list', Object.values(users));
     });
 });
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log('Support Central Online'));
+server.listen(PORT, () => console.log('Green Apple Ultimate Engine Online'));

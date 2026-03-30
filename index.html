@@ -6,43 +6,43 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Green Apple</title>
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="https://img.icons8.com/color/180/000000/apple.png">
     
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: #e5ddd5; margin: 0; display: flex; flex-direction: column; height: 100vh; }
-        .header { background: #075e54; color: white; padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        body { font-family: -apple-system, system-ui, sans-serif; background: #e5ddd5; margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+        .header { background: #075e54; color: white; padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.2); z-index: 10; }
         .header h1 { font-size: 18px; margin: 0; }
         .call-btn { background: #25d366; border: none; color: white; padding: 8px 15px; border-radius: 20px; font-weight: bold; cursor: pointer; }
         
-        #messages { flex: 1; overflow-y: auto; list-style: none; padding: 15px; margin: 0; display: flex; flex-direction: column; }
-        #messages li { padding: 8px 12px; margin-bottom: 5px; border-radius: 10px; max-width: 75%; background: white; box-shadow: 0 1px 1px rgba(0,0,0,0.1); font-size: 15px; position: relative; }
-        .my-msg { align-self: flex-end; background: #dcf8c6 !important; }
-        .u-name { font-size: 10px; color: #075e54; font-weight: bold; display: block; }
+        #messages { flex: 1; overflow-y: auto; list-style: none; padding: 15px; margin: 0; display: flex; flex-direction: column; gap: 8px; }
+        #messages li { padding: 10px 14px; border-radius: 12px; max-width: 80%; background: white; box-shadow: 0 1px 2px rgba(0,0,0,0.1); font-size: 15px; align-self: flex-start; position: relative; }
+        .my-msg { align-self: flex-end !important; background: #dcf8c6 !important; }
+        .u-name { font-size: 10px; color: #075e54; font-weight: bold; display: block; margin-bottom: 3px; }
+        .m-time { font-size: 9px; color: #888; float: right; margin-top: 5px; margin-left: 10px; }
 
-        form { display: flex; padding: 10px; background: #f0f0f0; }
-        input { flex: 1; border: none; padding: 10px 15px; border-radius: 20px; font-size: 16px; outline: none; }
-        #send { background: #075e54; color: white; border: none; border-radius: 50%; width: 40px; height: 40px; margin-left: 10px; font-weight: bold; }
+        form { display: flex; padding: 10px; background: #f0f0f0; border-top: 1px solid #ddd; }
+        input { flex: 1; border: none; padding: 12px 18px; border-radius: 25px; font-size: 16px; outline: none; }
+        #send { background: #075e54; color: white; border: none; border-radius: 50%; width: 45px; height: 45px; margin-left: 10px; cursor: pointer; font-weight: bold; }
 
-        /* Video Call UI */
-        #video-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: black; z-index: 10000; }
-        #remote-video { width: 100%; height: 100%; object-fit: cover; }
-        #local-video { width: 30%; height: 25%; position: absolute; bottom: 90px; right: 20px; border: 2px solid white; border-radius: 10px; object-fit: cover; z-index: 10001; }
-        .hangup { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); background: #ff3b30; color: white; border: none; border-radius: 50%; width: 70px; height: 70px; font-size: 30px; z-index: 10002; }
+        #video-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: black; z-index: 9999; }
+        #remote-v { width: 100%; height: 100%; object-fit: cover; }
+        #local-v { width: 30%; height: 22%; position: absolute; bottom: 100px; right: 20px; border: 2px solid white; border-radius: 10px; transform: scaleX(-1); object-fit: cover; }
+        .hang { position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%); background: #ff3b30; color: white; border: none; border-radius: 50%; width: 70px; height: 70px; font-size: 30px; cursor: pointer; }
     </style>
 </head>
 <body>
 
 <div id="video-overlay">
-    <video id="remote-video" autoplay playsinline></video>
-    <video id="local-video" autoplay muted playsinline></video>
-    <button class="hangup" onclick="endCall()">×</button>
+    <video id="remote-v" autoplay playsinline></video>
+    <video id="local-v" autoplay muted playsinline></video>
+    <button class="hang" onclick="location.reload()">×</button>
 </div>
 
 <div class="header">
     <div>
         <h1>Green Apple</h1>
-        <small id="my-num" style="font-size: 10px; opacity: 0.8;"></small>
+        <small id="user-display" style="font-size: 10px; opacity: 0.8;"></small>
     </div>
     <button class="call-btn" onclick="startCall()">📞 POZOVI</button>
 </div>
@@ -59,21 +59,21 @@
 
 <script>
     const socket = io();
-    const sound = new Audio('https://assets.mixkit.co/active_storage/sfx/2354/2354-preview.mp3');
+    const ding = new Audio('https://assets.mixkit.co/active_storage/sfx/2354/2354-preview.mp3');
 
-    // REGISTRACIJA (PAMĆENJE)
+    // Pamćenje korisnika
     let myPhone = localStorage.getItem('apple_phone');
     let myName = localStorage.getItem('apple_name');
 
     if (!myPhone || !myName) {
-        myPhone = prompt("Unesi svoj broj telefona (npr. 0603344334):");
-        myName = prompt("Unesi svoje ime:");
+        myPhone = prompt("Unesi svoj broj (npr. 0603344334):") || "000";
+        myName = prompt("Unesi svoje ime:") || "Korisnik";
         localStorage.setItem('apple_phone', myPhone);
         localStorage.setItem('apple_name', myName);
     }
-    document.getElementById('my-num').innerText = "Tvoj broj: " + myPhone;
+    document.getElementById('user-display').innerText = myName + " (" + myPhone + ")";
 
-    // CHAT
+    // Chat funkcije
     document.getElementById('chat-form').onsubmit = (e) => {
         e.preventDefault();
         const input = document.getElementById('msg-input');
@@ -83,47 +83,51 @@
         }
     };
 
+    socket.on('load history', (history) => history.forEach(addMsg));
     socket.on('chat message', (data) => {
-        const li = document.createElement('li');
-        if (data.phone === myPhone) li.className = 'my-msg';
-        li.innerHTML = `<span class="u-name">${data.name}</span>${data.text}`;
-        document.getElementById('messages').appendChild(li);
-        document.getElementById('messages').scrollTop = document.getElementById('messages').scrollHeight;
-        if (data.phone !== myPhone) sound.play().catch(()=>{});
+        addMsg(data);
+        if (data.phone !== myPhone) ding.play().catch(()=>{});
     });
 
-    // VIDEO POZIVI
-    const peer = new Peer(myPhone);
-    const videoDiv = document.getElementById('video-overlay');
+    function addMsg(data) {
+        const li = document.createElement('li');
+        if (data.phone === myPhone) li.className = 'my-msg';
+        li.innerHTML = `<span class="u-name">${data.name}</span>${data.text}<span class="m-time">${data.time || ''}</span>`;
+        document.getElementById('messages').appendChild(li);
+        document.getElementById('messages').scrollTop = document.getElementById('messages').scrollHeight;
+    }
+
+    // Video pozivi sa STUN serverima
+    const peer = new Peer(myPhone, {
+        config: {'iceServers': [
+            { url: 'stun:stun.l.google.com:19302' },
+            { url: 'stun:stun1.l.google.com:19302' },
+            { url: 'stun:stun2.l.google.com:19302' }
+        ]}
+    });
 
     peer.on('call', call => {
-        if (confirm("Poziv od: " + call.peer + ". Prihvati?")) {
+        if (confirm("Dolazni poziv od: " + call.peer)) {
             navigator.mediaDevices.getUserMedia({video: true, audio: true}).then(stream => {
-                videoDiv.style.display = 'block';
-                document.getElementById('local-video').srcObject = stream;
+                document.getElementById('video-overlay').style.display = 'block';
+                document.getElementById('local-v').srcObject = stream;
                 call.answer(stream);
-                call.on('stream', userStream => {
-                    document.getElementById('remote-video').srcObject = userStream;
-                });
+                call.on('stream', rs => document.getElementById('remote-v').srcObject = rs);
             });
         }
     });
 
     function startCall() {
-        const target = prompt("Unesi broj koji zoveš:");
-        if (target) {
+        const t = prompt("Koga zoveš (broj telefona):");
+        if (t) {
             navigator.mediaDevices.getUserMedia({video: true, audio: true}).then(stream => {
-                videoDiv.style.display = 'block';
-                document.getElementById('local-video').srcObject = stream;
-                const call = peer.call(target, stream);
-                call.on('stream', userStream => {
-                    document.getElementById('remote-video').srcObject = userStream;
-                });
+                document.getElementById('video-overlay').style.display = 'block';
+                document.getElementById('local-v').srcObject = stream;
+                const call = peer.call(t, stream);
+                call.on('stream', rs => document.getElementById('remote-v').srcObject = rs);
             });
         }
     }
-
-    function endCall() { location.reload(); }
 </script>
 </body>
 </html>

@@ -6,27 +6,18 @@ const io = require('socket.io')(server);
 
 app.use(express.static(__dirname));
 
-// Čuva zadnjih 100 poruka u memoriji servera
-let tempHistory = [];
-
 io.on('connection', (socket) => {
-    // Pošalji istoriju novom korisniku
-    socket.emit('load history', tempHistory);
+    // Korisnik se pridružuje specifičnoj sobi
+    socket.on('join room', (roomName) => {
+        socket.join(roomName);
+        console.log(`Korisnik ušao u sobu: ${roomName}`);
+    });
 
     socket.on('chat message', (data) => {
-        const msg = {
-            name: data.name,
-            text: data.text,
-            phone: data.phone,
-            time: new Date().toLocaleTimeString('bs-BA', { hour: '2-digit', minute: '2-digit' })
-        };
-        
-        tempHistory.push(msg);
-        if (tempHistory.length > 100) tempHistory.shift();
-
-        io.emit('chat message', msg);
+        // Poruka se šalje SAMO ljudima u istoj sobi
+        io.to(data.room).emit('chat message', data);
     });
 });
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log('Server leti na portu ' + PORT));
+server.listen(PORT, () => console.log('Green Apple Kripto Server na ' + PORT));

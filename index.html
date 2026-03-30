@@ -3,119 +3,195 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Green Apple Support Console</title>
+    <title>Green Apple Support</title>
     <style>
-        :root { --apple-green: #32d74b; --bg: #000; --panel: #1c1c1e; }
-        body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; color: white; height: 100vh; display: flex; flex-direction: column; }
+        :root { --apple-green: #32d74b; --bg: #000; --card: #1c1c1e; --glass: rgba(30, 30, 30, 0.8); }
+        body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; color: white; overflow: hidden; }
         
-        .header { background: #111; padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 0.5px solid #333; }
+        /* Liste i Navigacija */
+        #main-view { height: 100vh; display: flex; flex-direction: column; }
+        .nav { padding: 40px 20px 10px; display: flex; justify-content: space-between; align-items: center; }
+        .nav h1 { font-size: 30px; margin: 0; color: var(--apple-green); }
+        .contact { display: flex; align-items: center; padding: 15px 20px; gap: 15px; border-bottom: 0.5px solid #222; }
+        .contact img { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; }
         
-        /* Admin Console Overlay */
-        #admin-console { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #050505; z-index: 10000; overflow-y: auto; padding: 20px; box-sizing: border-box; }
-        .monitor-box { background: #111; border: 1px solid #333; border-radius: 10px; padding: 10px; margin-top: 20px; max-height: 300px; overflow-y: auto; font-family: monospace; font-size: 12px; }
-        .spy-log { border-bottom: 0.5px solid #222; padding: 5px 0; color: #aaa; }
-        .spy-log b { color: var(--apple-green); }
+        /* Chat Prozor */
+        #chat-view { display: none; position: fixed; inset: 0; background: var(--bg); z-index: 1000; flex-direction: column; }
+        .chat-head { background: var(--glass); backdrop-filter: blur(20px); padding: 15px; display: flex; align-items: center; justify-content: space-between; border-bottom: 0.5px solid #333; }
+        #msg-box { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 5px; }
+        
+        /* Mjehurići */
+        .bubble { padding: 10px 15px; border-radius: 20px; max-width: 75%; font-size: 15px; line-height: 1.4; position: relative; }
+        .me { align-self: flex-end; background: var(--apple-green); color: #000; border-bottom-right-radius: 4px; }
+        .them { align-self: flex-start; background: var(--card); color: #fff; border-bottom-left-radius: 4px; }
+        .bubble img { max-width: 100%; border-radius: 10px; margin-top: 5px; }
+        .time { font-size: 9px; opacity: 0.5; display: block; margin-top: 3px; }
 
-        /* Chat UI */
-        #chat { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 8px; }
-        .msg { padding: 10px 15px; border-radius: 20px; max-width: 75%; font-size: 15px; list-style: none; }
-        .me { align-self: flex-end; background: var(--apple-green); color: black; }
-        .them { align-self: flex-start; background: var(--panel); color: white; }
+        /* Input */
+        .bar { padding: 10px 15px 30px; display: flex; align-items: center; gap: 10px; background: var(--bg); }
+        .bar input { flex: 1; background: var(--card); border: none; padding: 12px 18px; border-radius: 25px; color: #fff; outline: none; }
+        .btn-act { background: none; border: none; font-size: 20px; color: var(--apple-green); }
 
-        .input-area { background: var(--bg); padding: 15px; display: flex; gap: 10px; border-top: 0.5px solid #222; }
-        input { flex: 1; background: #262629; border: none; padding: 12px; border-radius: 25px; color: white; outline: none; }
-        .btn-admin { background: none; border: 1px solid var(--apple-green); color: var(--apple-green); border-radius: 5px; padding: 5px 10px; font-size: 12px; cursor: pointer; }
+        /* Video Overlay */
+        #video-ui { display: none; position: fixed; inset: 0; background: #000; z-index: 2000; }
+        #rem-v { width: 100%; height: 100%; object-fit: cover; }
+        #loc-v { width: 100px; height: 140px; position: absolute; top: 30px; right: 20px; border-radius: 15px; border: 2px solid var(--apple-green); }
+        .hang { position: absolute; bottom: 50px; left: 50%; transform: translateX(-50%); background: #ff3b30; width: 65px; height: 65px; border-radius: 50%; border: none; font-size: 30px; }
+
+        /* Admin Dashboard */
+        #admin-dash { display: none; position: fixed; inset: 0; background: #000; z-index: 3000; padding: 20px; overflow-y: auto; }
+        .spy-log { font-size: 11px; background: #111; padding: 10px; border-radius: 8px; margin-bottom: 5px; border-left: 3px solid var(--apple-green); }
     </style>
 </head>
 <body>
 
-<div id="admin-console">
-    <h2 style="color: var(--apple-green); margin-top: 0;">Support Central Dashboard 🍏</h2>
-    
-    <h3>Aktivni Korisnici & Sobe:</h3>
-    <div id="user-list"></div>
-
-    <h3>Live Chat Monitor (Presretanje):</h3>
-    <div id="spy-monitor" class="monitor-box">
-        <div style="color: #666;">Čekam na poruke...</div>
-    </div>
-
-    <button onclick="toggleAdmin()" style="width: 100%; background: #ff3b30; color: white; border: none; padding: 15px; border-radius: 10px; margin-top: 20px; font-weight: bold;">ZATVORI KONZOLU</button>
+<div id="video-ui">
+    <video id="rem-v" autoplay playsinline></video>
+    <video id="loc-v" autoplay muted playsinline></video>
+    <button class="hang" onclick="location.reload()">✕</button>
 </div>
 
-<div class="header">
-    <div style="display: flex; align-items: center; gap: 10px;">
-        <img src="https://img.icons8.com/color/96/000000/apple.png" width="35">
-        <div>
-            <b>Green Apple Support</b><br>
-            <small id="online-info" style="color: var(--apple-green);">Povezivanje...</small>
+<div id="admin-dash">
+    <h2 style="color: var(--apple-green);">Support Console</h2>
+    <div id="admin-logs"></div>
+    <button onclick="document.getElementById('admin-dash').style.display='none'" style="width:100%; background:var(--apple-green); padding:15px; border:none; border-radius:10px; font-weight:bold; margin-top:20px;">Zatvori</button>
+</div>
+
+<div id="main-view">
+    <div class="nav">
+        <h1>Green Apple</h1>
+        <div style="display: flex; gap: 15px;">
+            <span onclick="openAdmin()" style="cursor:pointer">⚙️</span>
+            <span onclick="location.reload()" style="cursor:pointer">⋮</span>
         </div>
     </div>
-    <button class="btn-admin" onclick="toggleAdmin()">ADMIN PANEL</button>
+    <div id="user-list"></div>
 </div>
 
-<ul id="chat"></ul>
+<div id="chat-view">
+    <div class="chat-head">
+        <div style="display:flex; align-items:center; gap:10px;">
+            <span onclick="closeChat()" style="color:var(--apple-green); font-size:18px;">❮ Nazad</span>
+            <img id="h-img" src="" style="width:35px; height:35px; border-radius:50%;">
+            <b id="h-name">Ime</b>
+        </div>
+        <span onclick="startCall()" style="font-size:20px; cursor:pointer;">📞</span>
+    </div>
+    <div id="msg-box"></div>
+    <div id="typing-ui" style="font-size:10px; padding-left:20px; color:var(--apple-green); height:15px;"></div>
+    <form class="bar" id="msg-form">
+        <input type="file" id="img-in" hidden accept="image/*">
+        <span class="btn-act" onclick="document.getElementById('img-in').click()">🖼️</span>
+        <input id="msg-in" placeholder="iMessage" autocomplete="off">
+        <button type="submit" class="btn-act" style="background:var(--apple-green); color:#000; border-radius:50%; width:30px; height:30px; font-weight:bold;">↑</button>
+    </form>
+</div>
 
-<form class="input-area" id="msg-form">
-    <input id="msg-input" placeholder="iMessage" autocomplete="off">
-    <button type="submit" style="background: var(--apple-green); border:none; border-radius:50%; width:35px; height:35px;">↑</button>
-</form>
+<audio id="snd" src="https://assets.mixkit.co/active_storage/sfx/2354/2354-preview.mp3"></audio>
 
 <script src="/socket.io/socket.io.js"></script>
+<script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 <script>
     const socket = io();
-    const myPhone = "00387603344334";
-    const myName = "Support Admin";
-    let currentRoom = "support_global";
+    const myPhone = localStorage.getItem('p') || prompt("Broj (00387...):");
+    const myName = (myPhone === "00387603344334") ? "Support Admin" : (localStorage.getItem('n') || prompt("Ime:"));
+    
+    localStorage.setItem('p', myPhone);
+    localStorage.setItem('n', myName);
 
-    socket.emit('join', { room: currentRoom, name: myName, phone: myPhone });
+    let targetPhone = null;
+    socket.emit('auth', { phone: myPhone, name: myName });
 
-    function toggleAdmin() {
-        const console = document.getElementById('admin-console');
-        console.style.display = console.style.display === 'block' ? 'none' : 'block';
-    }
+    const peer = new Peer(myPhone, { config: { 'iceServers': [{ urls: 'stun:stun.l.google.com:19302' }] } });
 
-    // Chat Slanje
-    document.getElementById('msg-form').onsubmit = (e) => {
-        e.preventDefault();
-        const input = document.getElementById('msg-input');
-        if(input.value) {
-            socket.emit('chat message', { name: myName, text: input.value, phone: myPhone, room: currentRoom });
-            input.value = '';
-        }
-    };
-
-    // Chat Prijem (Normalan)
-    socket.on('chat message', (data) => {
-        const li = document.createElement('li');
-        li.className = `msg ${data.phone === myPhone ? 'me' : 'them'}`;
-        li.innerHTML = `<small style="display:block; font-size:9px; opacity:0.6">${data.name}</small>${data.text}`;
-        document.getElementById('chat').appendChild(li);
-        document.getElementById('chat').scrollTop = document.getElementById('chat').scrollHeight;
-    });
-
-    // --- NADZORNI SISTEM (Samo za tebe) ---
-    socket.on('admin update', (users) => {
-        document.getElementById('online-info').innerText = `${users.length} aktivnih`;
+    // --- LISTA KORISNIKA ---
+    socket.on('user_list', (users) => {
         const list = document.getElementById('user-list');
         list.innerHTML = "";
         users.forEach(u => {
-            const card = document.createElement('div');
-            card.style.background = "#1c1c1e";
-            card.style.padding = "10px";
-            card.style.marginBottom = "5px";
-            card.style.borderRadius = "8px";
-            card.innerHTML = `<b>${u.name}</b> (${u.phone}) <br> <small style="color: #888">Soba: ${u.room}</small>`;
-            list.appendChild(card);
+            if(u.phone === myPhone) return;
+            const el = document.createElement('div');
+            el.className = 'contact';
+            el.onclick = () => openChat(u.phone, u.name, u.photo);
+            el.innerHTML = `<img src="${u.photo}"><div><b>${u.name}</b><br><small style="color:var(--apple-green)">${u.phone}</small></div>`;
+            list.appendChild(el);
         });
     });
 
-    socket.on('spy message', (data) => {
-        const monitor = document.getElementById('spy-monitor');
+    function openChat(phone, name, img) {
+        targetPhone = phone;
+        document.getElementById('h-name').innerText = name;
+        document.getElementById('h-img').src = img;
+        document.getElementById('chat-view').style.display = 'flex';
+        document.getElementById('msg-box').innerHTML = "";
+    }
+
+    function closeChat() { document.getElementById('chat-view').style.display = 'none'; targetPhone = null; }
+
+    // --- PORUKE I SLIKE ---
+    document.getElementById('msg-form').onsubmit = (e) => {
+        e.preventDefault();
+        const input = document.getElementById('msg-in');
+        if(input.value && targetPhone) {
+            socket.emit('send_msg', { from: myPhone, to: targetPhone, name: myName, text: input.value, type: 'text' });
+            input.value = "";
+        }
+    };
+
+    document.getElementById('img-in').onchange = (e) => {
+        const file = e.target.files[0];
+        const reader = new FileReader();
+        reader.onload = () => {
+            socket.emit('send_msg', { from: myPhone, to: targetPhone, name: myName, image: reader.result, type: 'image' });
+        };
+        reader.readAsDataURL(file);
+    };
+
+    socket.on('new_msg', (d) => {
+        if(targetPhone === d.from || d.from === myPhone) {
+            const b = document.createElement('div');
+            b.className = `bubble ${d.from === myPhone ? 'me' : 'them'}`;
+            if(d.type === 'image') b.innerHTML = `<img src="${d.image}">`;
+            else b.innerHTML = d.text;
+            b.innerHTML += `<span class="time">${new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>`;
+            document.getElementById('msg-box').appendChild(b);
+            document.getElementById('msg-box').scrollTop = document.getElementById('msg-box').scrollHeight;
+            if(d.from !== myPhone) document.getElementById('snd').play();
+        }
+    });
+
+    // --- ADMIN NADZOR ---
+    function openAdmin() {
+        if(myPhone === "00387603344334") document.getElementById('admin-dash').style.display = 'block';
+        else alert("Samo za Support Admina.");
+    }
+
+    socket.on('admin_spy', (d) => {
         const log = document.createElement('div');
         log.className = 'spy-log';
-        log.innerHTML = `[${data.time}] <b>${data.from}</b> (u sobi: ${data.room}): ${data.text}`;
-        monitor.prepend(log); // Najnovije poruke na vrh
+        log.innerHTML = `<b>${d.from} → ${d.to}:</b> ${d.text || '[Slika]'}`;
+        document.getElementById('admin-logs').prepend(log);
+    });
+
+    // --- POZIVI ---
+    function startCall() {
+        navigator.mediaDevices.getUserMedia({video:true, audio:true}).then(s => {
+            document.getElementById('video-ui').style.display='block';
+            document.getElementById('loc-v').srcObject=s;
+            const call = peer.call(targetPhone, s);
+            call.on('stream', rs => document.getElementById('rem-v').srcObject=rs);
+        });
+    }
+
+    peer.on('call', call => {
+        if(confirm("Dolazni poziv...")) {
+            navigator.mediaDevices.getUserMedia({video:true, audio:true}).then(s => {
+                document.getElementById('video-ui').style.display='block';
+                document.getElementById('loc-v').srcObject=s;
+                call.answer(s);
+                call.on('stream', rs => document.getElementById('rem-v').srcObject=rs);
+            });
+        }
     });
 </script>
 </body>

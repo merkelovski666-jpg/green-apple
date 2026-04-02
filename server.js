@@ -1,19 +1,58 @@
-function sendMessage() {
-    const input = document.getElementById('user-input');
-    const chatBox = document.getElementById('chat-box');
-    
-    if (input.value.trim() !== "") {
-        const msg = document.createElement('div');
-        msg.textContent = input.value;
-        msg.style.background = "#34c759";
-        msg.style.color = "white";
-        msg.style.padding = "10px 15px";
-        msg.style.borderRadius = "15px";
-        msg.style.alignSelf = "flex-end";
-        msg.style.maxWidth = "80%";
-        
-        chatBox.appendChild(msg);
-        input.value = "";
-        chatBox.scrollTop = chatBox.scrollHeight;
-    }
-}
+const express = require('express');
+const http = require('http');
+const { Server } = require('socket.io');
+const path = require('path');
+const cors = require('cors');
+
+const app = express();
+app.use(cors());
+app.use(express.static(__dirname)); // Ovo omogućava da Render vidi index.html i style.css
+
+const server = http.createServer(app);
+const io = new Server(server, {
+    cors: { origin: "*" }
+});
+
+let users = {};
+
+io.on('connection', (socket) => {
+    // Registracija korisnika
+    socket.on('store-user', (userId) => {
+        users[userId] = socket.id;
+        console.log(`Korisnik ${userId} je na vezi.`);
+    });
+
+    // Privatne poruke
+    socket.on('send-message', (data) => {
+        const receiverSocket = users[data.to];
+        if (receiverSocket) {
+            io.to(receiverSocket).emit('new-message', {
+                from: data.from,
+                text: data.text
+            });
+        }
+    });
+
+    // Pozivi (Signaling)
+    socket.on('call-user', (data) => {
+        const receiverSocket = users[data.userToCall];
+        if (receiverSocket) {
+            io.to(receiverSocket).emit('incoming-call', {
+                signal: data.signalData,
+                from: data.from
+            });
+        }
+    });
+
+    socket.on('disconnect', () => {
+        for (let id in users) {
+            if (users[id] === socket.id) delete users[id];
+        }
+    });
+});
+
+// Render zahteva process.env.PORT
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => {
+    console.log(`Green Apple radi na portu ${PORT}`);
+});

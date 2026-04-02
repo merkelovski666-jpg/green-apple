@@ -1,17 +1,14 @@
 {
   "name": "green-apple",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "engines": {
-    "node": "20.x"
-  },
+  "description": "WhatsApp clone",
+  "main": "server.js",
   "scripts": {
-    "start": "node index.js",
-    "dev": "nodemon index.js"
+    "start": "node server.js"
   },
   "dependencies": {
-    "express": "^4.18.2"
+    "express": "^4.18.2",
+    "socket.io": "^4.7.2",
+    "cors": "^2.8.5"
   }
 }
-

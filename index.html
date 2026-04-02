@@ -5,79 +5,127 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Green Apple Pro</title>
     <style>
-        :root { --apple-green: #30d158; --bg: #000; --card: #1c1c1e; }
+        :root { --apple-green: #30d158; --dark: #000; --panel: #1c1c1e; }
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, sans-serif; }
-        body { background: var(--bg); color: white; height: 100vh; display: flex; flex-direction: column; }
-        
-        /* HEADER SA ANIMACIJOM */
+        body { background: var(--dark); color: white; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+
+        /* REGISTRACIJA */
+        #gate { position: fixed; inset: 0; background: linear-gradient(180deg, #000, #0a3d2e); z-index: 2000; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+        .input-group { width: 85%; max-width: 400px; }
+        input { width: 100%; padding: 18px; margin: 8px 0; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 15px; color: white; font-size: 16px; outline: none; }
+        .btn-start { width: 100%; padding: 18px; background: var(--apple-green); color: black; border: none; border-radius: 15px; font-weight: bold; font-size: 18px; margin-top: 15px; }
+
+        /* GLAVNI UI */
         header { padding: 25px 20px; background: rgba(28,28,30,0.9); backdrop-filter: blur(20px); border-bottom: 0.5px solid #333; display: flex; justify-content: space-between; align-items: center; }
-        .pulse { width: 12px; height: 12px; background: var(--apple-green); border-radius: 50%; animation: shadow-pulse 1.5s infinite; }
-        @keyframes shadow-pulse { 0% { box-shadow: 0 0 0 0px rgba(48, 209, 88, 0.4); } 100% { box-shadow: 0 0 0 15px rgba(48, 209, 88, 0); } }
-
-        /* LISTA KORISNIKA */
+        .status-dot { width: 12px; height: 12px; background: var(--apple-green); border-radius: 50%; box-shadow: 0 0 15px var(--apple-green); }
+        
         #user-list { flex: 1; overflow-y: auto; padding: 15px; }
-        .empty-state { text-align: center; margin-top: 50px; color: #8e8e93; }
-        .user-card { background: var(--card); padding: 18px; border-radius: 20px; margin-bottom: 12px; display: flex; align-items: center; gap: 15px; border: 1px solid transparent; transition: 0.3s; }
-        .user-card:active { transform: scale(0.97); background: #2c2c2e; border-color: var(--apple-green); }
-        .avatar { width: 55px; height: 55px; background: linear-gradient(135deg, #333, #111); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: bold; color: var(--apple-green); }
+        .user-card { background: var(--panel); padding: 18px; border-radius: 20px; margin-bottom: 12px; display: flex; align-items: center; gap: 15px; transition: 0.2s; }
+        .user-card:active { transform: scale(0.96); background: #2c2c2e; }
+        .avatar { width: 55px; height: 55px; background: #333; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 22px; color: var(--apple-green); border: 2px solid #444; }
 
-        /* MODAL ZA CHAT */
-        #chat-window { position: fixed; inset: 0; background: #000; z-index: 1000; display: none; flex-direction: column; }
+        /* CHAT PROZOR */
+        #chat-screen { position: fixed; inset: 0; background: #000; z-index: 1000; display: none; flex-direction: column; }
+        .chat-header { padding: 15px; background: var(--panel); display: flex; align-items: center; gap: 15px; border-bottom: 0.5px solid #333; }
+        #messages { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+        .bubble { max-width: 75%; padding: 12px 16px; border-radius: 20px; font-size: 16px; line-height: 1.4; }
+        .sent { background: var(--apple-green); color: black; align-self: flex-end; border-bottom-right-radius: 4px; }
+        .received { background: #2c2c2e; color: white; align-self: flex-start; border-bottom-left-radius: 4px; }
+        
+        .input-bar { padding: 15px; background: var(--panel); display: flex; gap: 10px; padding-bottom: 30px; }
+        #msg-input { flex: 1; background: #2c2c2e; border: none; padding: 12px 20px; border-radius: 25px; color: white; }
     </style>
 </head>
 <body>
+
+    <div id="gate">
+        <h1 style="font-size: 45px; letter-spacing: -2px; margin-bottom: 10px;">Green Apple</h1>
+        <p style="color: #8e8e93; margin-bottom: 30px;">Koncern nove generacije</p>
+        <div class="input-group">
+            <input type="text" id="reg-name" placeholder="Vaše Ime">
+            <input type="tel" id="reg-phone" placeholder="Broj telefona (npr. +381...)">
+            <button class="btn-start" onclick="register()">POKRENI KONCERN</button>
+        </div>
+    </div>
+
     <header>
-        <h1 style="letter-spacing: -1.5px; font-size: 28px;">Razgovori</h1>
-        <div class="pulse"></div>
+        <h1 style="font-size: 32px; letter-spacing: -1.5px;">Razgovori</h1>
+        <div class="status-dot"></div>
     </header>
 
     <div id="user-list">
-        <div class="empty-state">
-            <p style="font-size: 18px; color: white;">Trenutno nema nikoga online.</p>
-            <p style="font-size: 14px; margin-top: 10px;">Pošalji link prijatelju da se povežete u Green Apple!</p>
+        <p style="text-align: center; color: #8e8e93; margin-top: 50px;">Tražim korisnike u mreži...</p>
+    </div>
+
+    <div id="chat-screen">
+        <div class="chat-header">
+            <button onclick="closeChat()" style="background:none; border:none; color:var(--apple-green); font-size:18px;">‹ Nazad</button>
+            <b id="active-user-name">Ime</b>
+        </div>
+        <div id="messages"></div>
+        <div class="input-bar">
+            <input type="text" id="msg-input" placeholder="Nova poruka...">
+            <button onclick="send()" style="background:var(--apple-green); border:none; width:45px; height:45px; border-radius:50%; font-size:20px;">↑</button>
         </div>
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
         const socket = io();
-        let session = JSON.parse(localStorage.getItem('ga_session'));
+        let user = JSON.parse(localStorage.getItem('ga_pro_user'));
+        let currentChat = null;
 
-        if(!session) {
-            let n = prompt("Tvoje Ime:");
-            let p = prompt("Tvoj Broj:");
-            if(n && p) {
-                session = { name: n, phone: p };
-                localStorage.setItem('ga_session', JSON.stringify(session));
+        if(user) {
+            document.getElementById('gate').style.display = 'none';
+            socket.emit('register', user);
+        }
+
+        function register() {
+            const name = document.getElementById('reg-name').value;
+            const phone = document.getElementById('reg-phone').value;
+            if(name && phone) {
+                user = { name, phone };
+                localStorage.setItem('ga_pro_user', JSON.stringify(user));
                 location.reload();
             }
-        } else {
-            socket.emit('register', session);
         }
 
         socket.on('updateUsers', (users) => {
             const list = document.getElementById('user-list');
-            const others = users.filter(u => u.phone !== session.phone);
-            
+            const others = users.filter(u => u.phone !== user.phone);
             if(others.length > 0) {
                 list.innerHTML = others.map(u => `
-                    <div class="user-card" onclick="startChat('${u.phone}', '${u.name}')">
+                    <div class="user-card" onclick="openChat('${u.phone}', '${u.name}')">
                         <div class="avatar">${u.name[0]}</div>
-                        <div>
-                            <b style="font-size: 18px;">${u.name}</b><br>
-                            <small style="color: var(--apple-green);">Spreman za razgovor</small>
-                        </div>
+                        <div><b>${u.name}</b><br><small style="color:var(--apple-green)">Online preko broja</small></div>
                     </div>
                 `).join('');
             }
         });
 
-        function startChat(phone, name) {
-            alert("Otvaram čet sa: " + name + "\n(Ovo je Green Apple Pro brzina!)");
+        function openChat(phone, name) {
+            currentChat = phone;
+            document.getElementById('active-user-name').innerText = name;
+            document.getElementById('chat-screen').style.display = 'flex';
+        }
+
+        function closeChat() { document.getElementById('chat-screen').style.display = 'none'; }
+
+        function send() {
+            const i = document.getElementById('msg-input');
+            if(!i.value) return;
+            socket.emit('sendMessage', { to: currentChat, text: i.value });
+            render(i.value, 'sent');
+            i.value = '';
+        }
+
+        socket.on('newMessage', (d) => { if(currentChat === d.from) render(d.text, 'received'); });
+
+        function render(t, s) {
+            const m = document.getElementById('messages');
+            m.innerHTML += `<div class="bubble ${s}">${t}</div>`;
+            m.scrollTop = m.scrollHeight;
         }
     </script>
 </body>
 </html>
-
-
-

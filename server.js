@@ -7,32 +7,31 @@ const io = new Server(server, { cors: { origin: "*" } });
 
 app.use(express.static(__dirname));
 
-let onlineUsers = {}; 
+let users = new Map(); // Brža pretraga korisnika
 
 io.on('connection', (socket) => {
-    socket.on('go-online', (data) => {
-        onlineUsers[data.phone] = { id: socket.id, name: data.name, status: 'Online' };
-        socket.userPhone = data.phone;
-        io.emit('user-status-change', onlineUsers);
+    socket.on('auth', (data) => {
+        socket.userId = data.phone;
+        users.set(data.phone, { id: socket.id, name: data.name, status: 'Online' });
+        io.emit('sync-users', Array.from(users.values()));
     });
 
-    socket.on('typing', (data) => {
-        const target = onlineUsers[data.to];
-        if (target) io.to(target.id).emit('is-typing', { from: socket.userPhone });
-    });
-
-    socket.on('send-private-msg', (data) => {
-        const target = onlineUsers[data.to];
+    socket.on('msg-send', (payload) => {
+        const target = Array.from(users.values()).find(u => u.phone === payload.to);
         if (target) {
-            io.to(target.id).emit('new-msg', { from: socket.userPhone, text: data.text, time: data.time });
+            io.to(target.id).emit('msg-receive', { 
+                from: socket.userId, 
+                text: payload.text,
+                time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            });
         }
     });
 
     socket.on('disconnect', () => {
-        delete onlineUsers[socket.userPhone];
-        io.emit('user-status-change', onlineUsers);
+        users.delete(socket.userId);
+        io.emit('sync-users', Array.from(users.values()));
     });
 });
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log('Green Apple Engine Started...'));
+server.listen(PORT, () => console.log('Green Apple Engine v1.0 - Active'));

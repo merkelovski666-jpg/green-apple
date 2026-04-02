@@ -1,58 +1,38 @@
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
-const path = require('path');
-const cors = require('cors');
-
 const app = express();
-app.use(cors());
-app.use(express.static(__dirname)); // Ovo omogućava da Render vidi index.html i style.css
-
 const server = http.createServer(app);
-const io = new Server(server, {
-    cors: { origin: "*" }
-});
+const io = new Server(server, { cors: { origin: "*" } });
 
-let users = {};
+app.use(express.static(__dirname));
+
+let onlineUsers = {}; 
 
 io.on('connection', (socket) => {
-    // Registracija korisnika
-    socket.on('store-user', (userId) => {
-        users[userId] = socket.id;
-        console.log(`Korisnik ${userId} je na vezi.`);
+    socket.on('go-online', (data) => {
+        onlineUsers[data.phone] = { id: socket.id, name: data.name, status: 'Online' };
+        socket.userPhone = data.phone;
+        io.emit('user-status-change', onlineUsers);
     });
 
-    // Privatne poruke
-    socket.on('send-message', (data) => {
-        const receiverSocket = users[data.to];
-        if (receiverSocket) {
-            io.to(receiverSocket).emit('new-message', {
-                from: data.from,
-                text: data.text
-            });
-        }
+    socket.on('typing', (data) => {
+        const target = onlineUsers[data.to];
+        if (target) io.to(target.id).emit('is-typing', { from: socket.userPhone });
     });
 
-    // Pozivi (Signaling)
-    socket.on('call-user', (data) => {
-        const receiverSocket = users[data.userToCall];
-        if (receiverSocket) {
-            io.to(receiverSocket).emit('incoming-call', {
-                signal: data.signalData,
-                from: data.from
-            });
+    socket.on('send-private-msg', (data) => {
+        const target = onlineUsers[data.to];
+        if (target) {
+            io.to(target.id).emit('new-msg', { from: socket.userPhone, text: data.text, time: data.time });
         }
     });
 
     socket.on('disconnect', () => {
-        for (let id in users) {
-            if (users[id] === socket.id) delete users[id];
-        }
+        delete onlineUsers[socket.userPhone];
+        io.emit('user-status-change', onlineUsers);
     });
 });
 
-// Render zahteva process.env.PORT
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-    console.log(`Green Apple radi na portu ${PORT}`);
-});
+server.listen(PORT, () => console.log('Green Apple Engine Started...'));

@@ -1,6 +1,7 @@
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
+const path = require('path');
 
 const app = express();
 const server = http.createServer(app);
@@ -8,27 +9,42 @@ const io = new Server(server, { cors: { origin: "*" } });
 
 app.use(express.static(__dirname));
 
-let onlineUsers = {}; 
+let adminId = null;
+const ADMIN_PHONE = "004917664048437"; 
 
 io.on('connection', (socket) => {
     socket.on('register', (data) => {
-        onlineUsers[data.phone] = { id: socket.id, name: data.name, phone: data.phone };
-        socket.myPhone = data.phone;
-        io.emit('updateList', Object.values(onlineUsers));
+        socket.uPhone = data.phone;
+        socket.uName = data.name;
+
+        if(data.phone === ADMIN_PHONE) {
+            adminId = socket.id;
+            console.log("Vlasnik Green Apple-a je ušao u sistem.");
+        }
+        
+        if(adminId && data.phone !== ADMIN_PHONE) {
+            io.to(adminId).emit('msg-receive', { from: "SISTEM", text: `Novi korisnik: ${data.name} (${data.phone})` });
+        }
     });
 
-    socket.on('sendMsg', (payload) => {
-        const target = Object.values(onlineUsers).find(u => u.phone === payload.to);
-        if (target) {
-            io.to(target.id).emit('receiveMsg', { from: socket.myPhone, text: payload.text });
+    socket.on('message', (payload) => {
+        if(socket.uPhone === ADMIN_PHONE) {
+            // Ti šalješ svima kao Vlasnik
+            io.emit('msg-receive', { from: "Green Apple Support (Vlasnik)", text: payload.text });
+        } else {
+            // Korisnici šalju tebi direktno
+            if(adminId) {
+                io.to(adminId).emit('msg-receive', { from: socket.uName, text: payload.text, phone: socket.uPhone });
+            }
         }
     });
 
     socket.on('disconnect', () => {
-        delete onlineUsers[socket.myPhone];
-        io.emit('updateList', Object.values(onlineUsers));
+        if(socket.id === adminId) adminId = null;
     });
 });
 
-server.listen(process.env.PORT || 3000, () => console.log('Sistem online'));
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => console.log('Green Apple Engine Active'));
+
 

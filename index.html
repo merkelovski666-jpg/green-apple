@@ -1,131 +1,37 @@
-<!DOCTYPE html>
-<html lang="sr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Green Apple Messenger</title>
-    <style>
-        :root { --green: #00a884; --dark-bg: #111b21; --header-bg: #202c33; --incoming: #202c33; --outgoing: #005c4b; }
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
-        body { background: var(--dark-bg); color: white; overflow: hidden; }
+const express = require('express');
+const http = require('http');
+const { Server } = require('socket.io');
+const app = express();
+const server = http.createServer(app);
+const io = new Server(server, { cors: { origin: "*" } });
 
-        /* NAVIGACIJA */
-        .bottom-nav { position: fixed; bottom: 0; width: 100%; height: 60px; background: var(--header-bg); display: flex; justify-content: space-around; align-items: center; border-top: 1px solid #313d45; z-index: 10; }
-        .nav-item { color: #8696a0; font-size: 12px; text-align: center; cursor: pointer; transition: 0.3s; }
-        .nav-item.active { color: var(--green); }
+app.use(express.static(__dirname));
 
-        /* EKRANI */
-        .screen { display: none; height: calc(100vh - 60px); flex-direction: column; animation: fadeIn 0.3s ease; }
-        .screen.active { display: flex; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+let users = new Map(); // Brža pretraga korisnika
 
-        header { background: var(--header-bg); padding: 15px; display: flex; justify-content: space-between; align-items: center; }
-        .chat-list { flex: 1; overflow-y: auto; background: var(--dark-bg); }
-        .user-card { display: flex; padding: 15px; border-bottom: 1px solid #222d34; align-items: center; gap: 15px; }
-        .avatar { width: 50px; height: 50px; border-radius: 50%; background: #6a7175; display: flex; align-items: center; justify-content: center; font-weight: bold; }
+io.on('connection', (socket) => {
+    socket.on('auth', (data) => {
+        socket.userId = data.phone;
+        users.set(data.phone, { id: socket.id, name: data.name, status: 'Online' });
+        io.emit('sync-users', Array.from(users.values()));
+    });
 
-        /* CHAT PROZOR */
-        #chat-window { flex: 1; background: #0b141a; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
-        .bubble { max-width: 80%; padding: 10px 14px; border-radius: 12px; font-size: 15px; position: relative; }
-        .sent { background: var(--outgoing); align-self: flex-end; border-bottom-right-radius: 2px; }
-        .received { background: var(--incoming); align-self: flex-start; border-bottom-left-radius: 2px; }
-        .time { font-size: 10px; opacity: 0.6; display: block; text-align: right; margin-top: 5px; }
-
-        footer { background: var(--header-bg); padding: 10px; display: flex; gap: 10px; align-items: center; }
-        input { flex: 1; background: #2a3942; border: none; color: white; padding: 12px; border-radius: 20px; outline: none; }
-        
-        /* LOGIN MODAL */
-        #login-overlay { position: fixed; inset: 0; background: var(--green); z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
-    </style>
-</head>
-<body>
-
-    <audio id="snd-msg" src="https://www.myinstants.com/media/sounds/whatsapp_notification.mp3"></audio>
-
-    <div id="login-overlay">
-        <h1 style="font-size: 40px; margin-bottom: 30px;">Green Apple</h1>
-        <input type="text" id="reg-name" placeholder="Tvoje Ime">
-        <input type="text" id="reg-phone" placeholder="Broj telefona (npr. 061...)">
-        <button onclick="doLogin()" style="margin-top: 20px; padding: 15px 50px; border-radius: 30px; border: none; background: white; color: var(--green); font-weight: bold;">START</button>
-    </div>
-
-    <div id="chats-screen" class="screen active">
-        <header>
-            <h2>Green Apple</h2>
-            <span>🔍</span>
-        </header>
-        <div class="chat-list" id="contact-list">
-            </div>
-    </div>
-
-    <div id="settings-screen" class="screen">
-        <header><h2>Postavke</h2></header>
-        <div style="padding: 20px; text-align: center;">
-            <div class="avatar" style="width: 100px; height: 100px; font-size: 40px; margin: 0 auto 20px;">🍎</div>
-            <h3 id="profile-name">Korisnik</h3>
-            <p style="color: #8696a0; margin-top: 10px;">Verzija: Green Apple Pro 2026</p>
-            <button onclick="localStorage.clear(); location.reload();" style="color: #ea0038; background: none; border: none; margin-top: 50px;">Odjavi se</button>
-        </div>
-    </div>
-
-    <div class="bottom-nav">
-        <div class="nav-item active" onclick="showScreen('chats')">💬<br>Chats</div>
-        <div class="nav-item" onclick="showScreen('settings')">⚙️<br>Postavke</div>
-    </div>
-
-    <script src="/socket.io/socket.io.js"></script>
-    <script>
-        const socket = io();
-        let myData = JSON.parse(localStorage.getItem('apple_user')) || null;
-
-        if(myData) {
-            document.getElementById('login-overlay').style.display = 'none';
-            startSession();
+    socket.on('msg-send', (payload) => {
+        const target = Array.from(users.values()).find(u => u.phone === payload.to);
+        if (target) {
+            io.to(target.id).emit('msg-receive', { 
+                from: socket.userId, 
+                text: payload.text,
+                time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            });
         }
+    });
 
-        function doLogin() {
-            const name = document.getElementById('reg-name').value;
-            const phone = document.getElementById('reg-phone').value;
-            if(!name || !phone) return alert("Popuni sve!");
-            myData = { name, phone };
-            localStorage.setItem('apple_user', JSON.stringify(myData));
-            location.reload();
-        }
+    socket.on('disconnect', () => {
+        users.delete(socket.userId);
+        io.emit('sync-users', Array.from(users.values()));
+    });
+});
 
-        function startSession() {
-            socket.emit('go-online', myData);
-            document.getElementById('profile-name').innerText = myData.name;
-        }
-
-        function showScreen(type) {
-            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-            document.getElementById(type + '-screen').classList.add('active');
-            document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
-            event.currentTarget.classList.add('active');
-        }
-
-        socket.on('user-status-change', (users) => {
-            const list = document.getElementById('contact-list');
-            list.innerHTML = "";
-            for(let phone in users) {
-                if(phone === myData.phone) continue;
-                list.innerHTML += `
-                    <div class="user-card" onclick="openChat('${phone}', '${users[phone].name}')">
-                        <div class="avatar">${users[phone].name[0]}</div>
-                        <div>
-                            <b>${users[phone].name}</b>
-                            <p style="font-size: 12px; color: #00a884;">${users[phone].status}</p>
-                        </div>
-                    </div>
-                `;
-            }
-        });
-
-        // Ostatak logike za Chat poruke je isti, ali sada imaš navigaciju i nalog!
-        function openChat(phone, name) {
-            // Ovde možeš dodati poseban prozor za dopisivanje
-            alert("Otvaram chat sa: " + name + " (" + phone + ")");
-        }
-    </script>
-</body>
-</html>
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => console.log('Green Apple Engine v1.0 - Active'));

@@ -1,24 +1,32 @@
 <!DOCTYPE html>
-<html lang="bs">
+<html lang="sr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Apple Green Chat</title>
+    <title>Green Apple</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="apple-container">
-        <div class="header">
-            <img src="https://upload.wikimedia.org/wikipedia/commons/f/fa/Apple_logo_black.svg" alt="Apple Logo" class="logo">
-            <h1>Green Chat</h1>
-        </div>
-        <div id="chat-box" class="chat-box"></div>
-        <div class="input-area">
-            <input type="text" id="user-input" placeholder="Napiši poruku...">
-            <button onclick="sendMessage()">Pošalji</button>
-        </div>
+    <div id="app">
+        <h1>Green Apple Chat</h1>
+        <div id="chat-box"></div>
+        <input type="text" id="message" placeholder="Upiši poruku...">
+        <button onclick="sendMessage()">Pošalji</button>
     </div>
-    <script src="script.js"></script>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        
+        // Ovde ide tvoja klijentska logika za poruke i pozive
+        function sendMessage() {
+            const text = document.getElementById('message').value;
+            socket.emit('send-message', { from: 'Ja', to: 'Prijatelj', text: text });
+        }
+
+        socket.on('new-message', (data) => {
+            alert(data.from + ": " + data.text);
+        });
+    </script>
 </body>
 </html>
-

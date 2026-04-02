@@ -2,31 +2,57 @@
 <html lang="sr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Green Apple</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div id="app">
-        <h1>Green Apple Chat</h1>
-        <div id="chat-box"></div>
-        <input type="text" id="message" placeholder="Upiši poruku...">
-        <button onclick="sendMessage()">Pošalji</button>
+    <div id="app-container">
+        <header>
+            <span>Green Apple</span>
+            <div style="font-size: 14px;">Online</div>
+        </header>
+
+        <div id="chat-window">
+            <div class="message received">Dobrodošli u Green Apple!</div>
+        </div>
+
+        <footer>
+            <input type="text" id="msg-input" placeholder="Upiši poruku...">
+            <button onclick="send()">➤</button>
+        </header>
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
         const socket = io();
-        
-        // Ovde ide tvoja klijentska logika za poruke i pozive
-        function sendMessage() {
-            const text = document.getElementById('message').value;
-            socket.emit('send-message', { from: 'Ja', to: 'Prijatelj', text: text });
+        const chatWindow = document.getElementById('chat-window');
+
+        function send() {
+            const input = document.getElementById('msg-input');
+            const text = input.value;
+            if(!text) return;
+
+            // Dodaj tvoju poruku na ekran
+            addMessage(text, 'sent');
+            
+            // Pošalji serveru
+            socket.emit('send-message', { text: text });
+            input.value = '';
         }
 
         socket.on('new-message', (data) => {
-            alert(data.from + ": " + data.text);
+            addMessage(data.text, 'received');
         });
+
+        function addMessage(text, type) {
+            const div = document.createElement('div');
+            div.className = 'message ' + type;
+            div.innerText = text;
+            chatWindow.appendChild(div);
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+        }
     </script>
 </body>
 </html>
+

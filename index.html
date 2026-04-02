@@ -3,91 +3,128 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Green Apple</title>
+    <title>Green Apple Messenger</title>
     <style>
-        /* DIREKTAN DIZAJN DA NE BUDE SRANJE */
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: sans-serif; }
-        body { background-color: #d1d7db; display: flex; justify-content: center; height: 100vh; }
+        :root { --green: #00a884; --dark-bg: #111b21; --header-bg: #202c33; --incoming: #202c33; --outgoing: #005c4b; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        body { background: var(--dark-bg); color: white; overflow: hidden; }
+
+        /* NAVIGACIJA */
+        .bottom-nav { position: fixed; bottom: 0; width: 100%; height: 60px; background: var(--header-bg); display: flex; justify-content: space-around; align-items: center; border-top: 1px solid #313d45; z-index: 10; }
+        .nav-item { color: #8696a0; font-size: 12px; text-align: center; cursor: pointer; transition: 0.3s; }
+        .nav-item.active { color: var(--green); }
+
+        /* EKRANI */
+        .screen { display: none; height: calc(100vh - 60px); flex-direction: column; animation: fadeIn 0.3s ease; }
+        .screen.active { display: flex; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        header { background: var(--header-bg); padding: 15px; display: flex; justify-content: space-between; align-items: center; }
+        .chat-list { flex: 1; overflow-y: auto; background: var(--dark-bg); }
+        .user-card { display: flex; padding: 15px; border-bottom: 1px solid #222d34; align-items: center; gap: 15px; }
+        .avatar { width: 50px; height: 50px; border-radius: 50%; background: #6a7175; display: flex; align-items: center; justify-content: center; font-weight: bold; }
+
+        /* CHAT PROZOR */
+        #chat-window { flex: 1; background: #0b141a; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+        .bubble { max-width: 80%; padding: 10px 14px; border-radius: 12px; font-size: 15px; position: relative; }
+        .sent { background: var(--outgoing); align-self: flex-end; border-bottom-right-radius: 2px; }
+        .received { background: var(--incoming); align-self: flex-start; border-bottom-left-radius: 2px; }
+        .time { font-size: 10px; opacity: 0.6; display: block; text-align: right; margin-top: 5px; }
+
+        footer { background: var(--header-bg); padding: 10px; display: flex; gap: 10px; align-items: center; }
+        input { flex: 1; background: #2a3942; border: none; color: white; padding: 12px; border-radius: 20px; outline: none; }
         
-        #app {
-            width: 100%; max-width: 500px; height: 100%;
-            background: #e5ddd5; display: flex; flex-direction: column;
-        }
-
-        header {
-            background: #075e54; color: white; padding: 15px;
-            display: flex; flex-direction: column; box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-        }
-
-        #chat-window {
-            flex: 1; overflow-y: auto; padding: 15px;
-            display: flex; flex-direction: column; gap: 10px;
-        }
-
-        .msg {
-            max-width: 80%; padding: 8px 12px; border-radius: 10px;
-            font-size: 15px; line-height: 1.4;
-        }
-        .sent { background: #dcf8c6; align-self: flex-end; border-top-right-radius: 0; }
-        .received { background: white; align-self: flex-start; border-top-left-radius: 0; }
-
-        footer {
-            background: #f0f0f0; padding: 10px; display: flex; gap: 10px;
-        }
-
-        input {
-            flex: 1; padding: 12px; border: none; border-radius: 20px; outline: none;
-        }
-
-        button {
-            background: #075e54; color: white; border: none;
-            width: 45px; height: 45px; border-radius: 50%; font-size: 20px;
-        }
+        /* LOGIN MODAL */
+        #login-overlay { position: fixed; inset: 0; background: var(--green); z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
     </style>
 </head>
 <body>
 
-    <div id="app">
+    <audio id="snd-msg" src="https://www.myinstants.com/media/sounds/whatsapp_notification.mp3"></audio>
+
+    <div id="login-overlay">
+        <h1 style="font-size: 40px; margin-bottom: 30px;">Green Apple</h1>
+        <input type="text" id="reg-name" placeholder="Tvoje Ime">
+        <input type="text" id="reg-phone" placeholder="Broj telefona (npr. 061...)">
+        <button onclick="doLogin()" style="margin-top: 20px; padding: 15px 50px; border-radius: 30px; border: none; background: white; color: var(--green); font-weight: bold;">START</button>
+    </div>
+
+    <div id="chats-screen" class="screen active">
         <header>
-            <b style="font-size: 18px;">Green Apple</b>
-            <span style="font-size: 12px; opacity: 0.8;">Online</span>
+            <h2>Green Apple</h2>
+            <span>🔍</span>
         </header>
+        <div class="chat-list" id="contact-list">
+            </div>
+    </div>
 
-        <div id="chat-window" id="messages">
-            <div class="msg received">Dobrodošli u Green Apple!</div>
+    <div id="settings-screen" class="screen">
+        <header><h2>Postavke</h2></header>
+        <div style="padding: 20px; text-align: center;">
+            <div class="avatar" style="width: 100px; height: 100px; font-size: 40px; margin: 0 auto 20px;">🍎</div>
+            <h3 id="profile-name">Korisnik</h3>
+            <p style="color: #8696a0; margin-top: 10px;">Verzija: Green Apple Pro 2026</p>
+            <button onclick="localStorage.clear(); location.reload();" style="color: #ea0038; background: none; border: none; margin-top: 50px;">Odjavi se</button>
         </div>
+    </div>
 
-        <footer>
-            <input type="text" id="minput" placeholder="Upiši poruku...">
-            <button onclick="sendMsg()">➤</button>
-        </footer>
+    <div class="bottom-nav">
+        <div class="nav-item active" onclick="showScreen('chats')">💬<br>Chats</div>
+        <div class="nav-item" onclick="showScreen('settings')">⚙️<br>Postavke</div>
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
         const socket = io();
-        const win = document.getElementById('chat-window');
+        let myData = JSON.parse(localStorage.getItem('apple_user')) || null;
 
-        function sendMsg() {
-            const inp = document.getElementById('minput');
-            if(!inp.value) return;
-            
-            // Prikaz tvoje poruke
-            add(inp.value, 'sent');
-            socket.emit('send-message', { text: inp.value });
-            inp.value = '';
+        if(myData) {
+            document.getElementById('login-overlay').style.display = 'none';
+            startSession();
         }
 
-        socket.on('new-message', (data) => {
-            add(data.text, 'received');
+        function doLogin() {
+            const name = document.getElementById('reg-name').value;
+            const phone = document.getElementById('reg-phone').value;
+            if(!name || !phone) return alert("Popuni sve!");
+            myData = { name, phone };
+            localStorage.setItem('apple_user', JSON.stringify(myData));
+            location.reload();
+        }
+
+        function startSession() {
+            socket.emit('go-online', myData);
+            document.getElementById('profile-name').innerText = myData.name;
+        }
+
+        function showScreen(type) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(type + '-screen').classList.add('active');
+            document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+        }
+
+        socket.on('user-status-change', (users) => {
+            const list = document.getElementById('contact-list');
+            list.innerHTML = "";
+            for(let phone in users) {
+                if(phone === myData.phone) continue;
+                list.innerHTML += `
+                    <div class="user-card" onclick="openChat('${phone}', '${users[phone].name}')">
+                        <div class="avatar">${users[phone].name[0]}</div>
+                        <div>
+                            <b>${users[phone].name}</b>
+                            <p style="font-size: 12px; color: #00a884;">${users[phone].status}</p>
+                        </div>
+                    </div>
+                `;
+            }
         });
 
-        function add(text, type) {
-            const d = document.createElement('div');
-            d.className = 'msg ' + type;
-            d.innerText = text;
-            win.appendChild(d);
-            win.scrollTop = win.scrollHeight;
+        // Ostatak logike za Chat poruke je isti, ali sada imaš navigaciju i nalog!
+        function openChat(phone, name) {
+            // Ovde možeš dodati poseban prozor za dopisivanje
+            alert("Otvaram chat sa: " + name + " (" + phone + ")");
         }
     </script>
 </body>

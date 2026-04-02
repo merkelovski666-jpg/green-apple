@@ -2,163 +2,23 @@
 <html lang="bs">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Green Apple Pro</title>
-    <style>
-        :root { --apple-green: #32d74b; --bg: #000; --card: #1c1c1e; }
-        body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; color: white; height: 100vh; overflow: hidden; }
-
-        /* Splash Screen */
-        #splash { position: fixed; inset: 0; background: #000; z-index: 999; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: 0.6s; }
-        .logo { width: 85px; filter: drop-shadow(0 0 15px var(--apple-green)); animation: pulse 2s infinite; }
-        @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
-
-        /* Auth/Login */
-        #auth { position: fixed; inset: 0; background: #000; z-index: 900; display: none; flex-direction: column; align-items: center; padding: 60px 25px; }
-        .p-box { width: 115px; height: 115px; border-radius: 50%; background: #222; border: 2px solid var(--apple-green); overflow: hidden; margin-bottom: 30px; cursor: pointer; }
-        .p-box img { width: 100%; height: 100%; object-fit: cover; }
-        input { width: 100%; background: var(--card); border: none; padding: 16px; border-radius: 14px; color: white; margin-bottom: 12px; font-size: 16px; box-sizing: border-box; outline: none; }
-        .btn-main { width: 100%; background: var(--apple-green); color: black; border: none; padding: 16px; border-radius: 14px; font-weight: bold; font-size: 17px; cursor: pointer; }
-
-        /* Main App UI */
-        #app { display: none; flex-direction: column; height: 100vh; }
-        .header { padding: 50px 20px 15px; background: rgba(0,0,0,0.85); backdrop-filter: blur(20px); border-bottom: 0.5px solid #333; }
-        .header h1 { font-size: 34px; margin: 0; color: var(--apple-green); letter-spacing: -1px; }
-        .user-list { flex: 1; overflow-y: auto; }
-        .user-card { display: flex; align-items: center; padding: 15px 20px; gap: 15px; border-bottom: 0.3px solid #222; transition: 0.2s; }
-        .user-card:active { background: #1c1c1e; }
-        .user-card img { width: 58px; height: 58px; border-radius: 50%; object-fit: cover; }
-
-        /* Chat Window */
-        #chat { position: fixed; inset: 0; background: #000; z-index: 1000; display: none; flex-direction: column; }
-        .nav { padding: 15px; display: flex; align-items: center; gap: 15px; background: rgba(28,28,30,0.95); backdrop-filter: blur(20px); border-bottom: 0.5px solid #333; }
-        #msgs { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 8px; }
-        .bubble { padding: 10px 16px; border-radius: 20px; max-width: 75%; font-size: 16px; line-height: 1.4; }
-        .bubble small { display: block; font-size: 10px; opacity: 0.6; margin-top: 4px; text-align: right; }
-        .me { align-self: flex-end; background: var(--apple-green); color: black; border-bottom-right-radius: 4px; }
-        .he { align-self: flex-start; background: var(--card); color: white; border-bottom-left-radius: 4px; }
-
-        .footer { padding: 10px 15px 35px; display: flex; gap: 10px; background: #000; border-top: 0.5px solid #333; }
-        .footer input { flex: 1; background: var(--card); border: none; padding: 12px 18px; border-radius: 25px; margin: 0; }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Apple Green Chat</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
-<div id="splash">
-    <img class="logo" src="https://img.icons8.com/color/512/apple-logo.png">
-    <h2 style="margin-top:20px; letter-spacing: 1px;">Green Apple</h2>
-</div>
-
-<div id="auth">
-    <h2 style="color:var(--apple-green)">Kreiraj Profil</h2>
-    <div class="p-box" onclick="document.getElementById('file').click()">
-        <img id="view" src="https://img.icons8.com/fluency/96/user-male-circle.png">
+    <div class="apple-container">
+        <div class="header">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/f/fa/Apple_logo_black.svg" alt="Apple Logo" class="logo">
+            <h1>Green Chat</h1>
+        </div>
+        <div id="chat-box" class="chat-box"></div>
+        <div class="input-area">
+            <input type="text" id="user-input" placeholder="Napiši poruku...">
+            <button onclick="sendMessage()">Pošalji</button>
+        </div>
     </div>
-    <input type="file" id="file" hidden accept="image/*">
-    <input id="u_name" placeholder="Tvoje Ime">
-    <input id="u_phone" placeholder="Broj telefona (npr. 00387...)">
-    <button class="btn-main" onclick="save()">AKTIVIRAJ</button>
-</div>
-
-<div id="app">
-    <div class="header"><h1>Poruke</h1></div>
-    <div id="list" class="user-list"></div>
-</div>
-
-<div id="chat">
-    <div class="nav">
-        <span onclick="back()" style="color:var(--apple-green); font-size:18px; cursor:pointer;">❮ Nazad</span>
-        <img id="t_img" src="" style="width:38px; height:38px; border-radius:50%;">
-        <b id="t_name" style="flex:1"></b>
-    </div>
-    <div id="msgs"></div>
-    <form class="footer" id="send-form">
-        <input id="m_input" placeholder="iMessage" autocomplete="off">
-        <button type="submit" style="background:var(--apple-green); border:none; width:35px; height:35px; border-radius:50%; font-weight:bold;">↑</button>
-    </form>
-</div>
-
-<script src="/socket.io/socket.io.js"></script>
-<script>
-    const socket = io();
-    let me = JSON.parse(localStorage.getItem('ga_pro_user'));
-    let activePeer = null;
-
-    // Splash Logic
-    setTimeout(() => {
-        document.getElementById('splash').style.opacity = '0';
-        setTimeout(() => {
-            document.getElementById('splash').style.display = 'none';
-            if(!me) document.getElementById('auth').style.display = 'flex';
-            else start();
-        }, 600);
-    }, 2500);
-
-    // Profile Image Logic
-    document.getElementById('file').onchange = (e) => {
-        const r = new FileReader();
-        r.onload = () => document.getElementById('view').src = r.result;
-        r.readAsDataURL(e.target.files[0]);
-    };
-
-    function save() {
-        const name = document.getElementById('u_name').value;
-        const phone = document.getElementById('u_phone').value;
-        const photo = document.getElementById('view').src;
-        if(name && phone) {
-            me = { name, phone, photo };
-            localStorage.setItem('ga_pro_user', JSON.stringify(me));
-            location.reload();
-        }
-    }
-
-    function start() {
-        document.getElementById('app').style.display = 'flex';
-        socket.emit('auth', me);
-    }
-
-    socket.on('user_list', (users) => {
-        const l = document.getElementById('list');
-        l.innerHTML = "";
-        users.forEach(u => {
-            if(u.phone === me.phone) return;
-            const card = document.createElement('div');
-            card.className = 'user-card';
-            card.onclick = () => openChat(u);
-            card.innerHTML = `<img src="${u.photo}"><div><b>${u.name}</b><br><small style="color:#888">${u.phone}</small></div>`;
-            l.appendChild(card);
-        });
-    });
-
-    function openChat(user) {
-        activePeer = user;
-        document.getElementById('chat').style.display = 'flex';
-        document.getElementById('t_name').innerText = user.name;
-        document.getElementById('t_img').src = user.photo;
-        document.getElementById('msgs').innerHTML = "";
-    }
-
-    function back() { document.getElementById('chat').style.display = 'none'; activePeer = null; }
-
-    document.getElementById('send-form').onsubmit = (e) => {
-        e.preventDefault();
-        const input = document.getElementById('m_input');
-        if(input.value && activePeer) {
-            socket.emit('send_msg', { from: me.phone, to: activePeer.phone, text: input.value });
-            input.value = "";
-        }
-    };
-
-    socket.on('new_msg', (data) => {
-        if(activePeer && (data.from === activePeer.phone || data.from === me.phone)) {
-            const b = document.createElement('div');
-            b.className = `bubble ${data.from === me.phone ? 'me' : 'he'}`;
-            b.innerHTML = `${data.text} <small>${data.time}</small>`;
-            const container = document.getElementById('msgs');
-            container.appendChild(b);
-            container.scrollTop = container.scrollHeight;
-        }
-    });
-</script>
+    <script src="script.js"></script>
 </body>
 </html>
+
